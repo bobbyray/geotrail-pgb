@@ -1,1 +1,4 @@
 # geotrail-pgb
+Functionally same as bobbyray/geotrail. This repository is for building the ios platform using Adobe PhoneGap Build, which is cloud based. PhoneGap Build will build for ios or android platforms. Adobe PhoneGap is based on the open source Apache Cordova project for building a mobile app that will run on multiple platforms from common source code. The required software platform dependencies are handled by plugins that implement platform dependent code. Apache Cordova and hence PhoneGap on a desktop require a Windows 10 machine to build for android and an Apple OSX (Mac) to build for ios. PhoneGap Cloud gets around the limitation of a developer not having an OSX or Windows 10 machine. 
+
+Currently this repository only supports code for ios. Use bobbyray/geotrail on a Windows 10 machine to build for android.
