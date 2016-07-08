@@ -7,7 +7,9 @@
     <author email="bob.schomburg@wigo.ws" href="http://cordova.io">
         WIGO Dev Team
     </author>
+    <!-- ////20160708 seems to always used index.html for content 
     <content src="Trail2.html" />
+    -->
     <access origin="*" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
