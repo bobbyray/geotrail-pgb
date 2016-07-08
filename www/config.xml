@@ -24,6 +24,11 @@
     <platform name="ios">
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
+        <!-- ////Exmamples for plugins 
+        <plugin name="cordova-plugin-example" spec="~2" /> 
+        <plugin spec="https://github.com/apache/cordova-plugin-file.git#4.1.0" source="git" /> 
+        -->
+        <plugin name="cordova-plugin-file" source="pgb" spec="2.0.0" /> 
     </platform>
     <!-- ////20160703 Redo for PhoneGap Build in cloud 
     <plugin name="cordova-plugin-file" spec="~2.0.0" />
