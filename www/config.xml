@@ -28,13 +28,20 @@
         <plugin name="cordova-plugin-example" spec="~2" /> 
         <plugin spec="https://github.com/apache/cordova-plugin-file.git#4.1.0" source="git" /> 
         -->
+        <plugin name="cordova-plugin-dialogs" source="pgb" spec="1.1.1" />        
         <plugin name="cordova-plugin-file" source="pgb" spec="2.0.0" /> 
+        <plugin name="cordova-plugin-file-transfer" source="pgb" spec="1.1.0" /> 
+        <plugin name="cordova-plugin-geolocation" source="pgb" spec="1.0.0" /> 
+        <plugin name="cordova-plugin-vibration" source="pgb" spec="1.2.0" /> 
+        <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" /> 
+        <gap:plugin name="com.phonegap.plugins.facebookconnect" version="0.11.0">
+            <param name="APP_ID" value=" 694318660701967" />
+            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
+        </gap:plugin>
+        <plugin spec="https://github.com/wnyc/cordova-plugin-wakeuptimer.git#1.0.1" source="git" />
     </platform>
     <!-- ////20160703 Redo for PhoneGap Build in cloud 
     <plugin name="cordova-plugin-file" spec="~2.0.0" />
     <preference name="AndroidPersistentFileLocation" value="Compatibility" />
     -->
-
-
-
 </widget>
