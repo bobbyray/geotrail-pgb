@@ -33,7 +33,9 @@
         <plugin name="cordova-plugin-file-transfer" source="pgb" spec="1.1.0" /> 
         <plugin name="cordova-plugin-geolocation" source="pgb" spec="1.0.0" /> 
         <plugin name="cordova-plugin-vibration" source="pgb" spec="1.2.0" /> 
-        <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" /> 
+        <!-- cordova-plugin-whitelist not found. 
+        <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" />
+        -->
         <gap:plugin name="com.phonegap.plugins.facebookconnect" version="0.8.0">
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
