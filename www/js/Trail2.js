@@ -983,11 +983,11 @@ Are you sure you want to delete the maps?";
     });
 
     //20160507 Added only to debug problem with filesytem for TileLayer for map.
-    /* Normally commented out
+    /* ////20160711CommentOut  Normally commented out */ 
     $('#buInitView').bind('click', function (e) {
         that.Initialize();
     });
-    */
+    
 
     /* //20150716 Trying to detect app ending does not work. These events do NOT fire
     $(window).bind('unload', function (e) {
@@ -3911,7 +3911,7 @@ function wigo_ws_Controller() {
     view.setOwnerId(sOwnerId);
     view.setOwnerName(model.getOwnerName());
     // Comment out next stmt only if debugging map initialization, in case handler for buInitView does initialization.
-    view.Initialize();
+    ////20160711!!!!Putback view.Initialize();
 }
 
 // Set global var for the controller and therefore the view and model.
