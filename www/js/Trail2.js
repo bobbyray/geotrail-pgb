@@ -2648,7 +2648,7 @@ may not be appropriate for your ablities and that the trails could have inaccura
         selectPhoneAlert.value = settings.bPhoneAlert ? 'yes' : 'no';
         numberPhoneVibeSecs.value = settings.secsPhoneVibe.toFixed(1);
         numberPhoneBeepCount.value = settings.countPhoneBeep.toFixed(0);
-        selectPebbleAlert.value = settings.bPebbleAlert ? 'yes' : 'no';
+        selectPebbleAlert.value = 'no'; // Always 'no' for ios settings.bPebbleAlert ? 'yes' : 'no';
         numberPebbleVibeCount.value = settings.countPebbleVibe.toFixed(0);
         numberPrevGeoLocThresMeters.value = settings.dPrevGeoLocThres.toFixed(0);
         selectCompassHeadingVisible.value = settings.bCompassHeadingVisible ? 'yes' : 'no'; 
