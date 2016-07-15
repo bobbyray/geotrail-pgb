@@ -240,7 +240,7 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
         // once compass bearing  is obtained.
         // If arg callbackCompassBearing is not defined, returns without changing result obj.
         function DoCompassBearingIfRequested() {
-            if (typeof(callbackCompassBearing) === 'function') {
+            if (typeof(callbackCompassBearing) === 'function' && navigator && navigator.compass) {
                 // Get compass bearing (heading) asynchronously and do callback 
                 // with the result in the async handler.
                 navigator.compass.getCurrentHeading( function(heading) { // success
