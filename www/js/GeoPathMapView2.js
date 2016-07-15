@@ -240,21 +240,28 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
         // once compass bearing  is obtained.
         // If arg callbackCompassBearing is not defined, returns without changing result obj.
         function DoCompassBearingIfRequested() {
-            if (typeof(callbackCompassBearing) === 'function' && navigator && navigator.compass) {
-                // Get compass bearing (heading) asynchronously and do callback 
-                // with the result in the async handler.
-                navigator.compass.getCurrentHeading( function(heading) { // success
-                    result.bCompass = true;
-                    result.bearingCompass = heading.magneticHeading;
-                    SetCompassHeadingArrow(heading.magneticHeading);
+            if (typeof(callbackCompassBearing) === 'function') {
+                if (navigator && navigator.compass) { 
+                    // Get compass bearing (heading) asynchronously and do callback 
+                    // with the result in the async handler.
+                    navigator.compass.getCurrentHeading( function(heading) { // success
+                        result.bCompass = true;
+                        result.bearingCompass = heading.magneticHeading;
+                        SetCompassHeadingArrow(heading.magneticHeading);
+                        callbackCompassBearing(result);
+                    }, 
+                    function(error){ // Error
+                        result.bCompass = false;
+                        result.bearingCompass = 0.0;
+                        result.compassError = error;
+                        callbackCompassBearing(result);
+                    });
+                } else {
+                    // navigator.compass is not defined, so cannot set compass heading.
+                    // Do callback for the result without compass heanding info. 
                     callbackCompassBearing(result);
-                }, 
-                function(error){ // Error
-                    result.bCompass = false;
-                    result.bearingCompass = 0.0;
-                    result.compassError = error;
-                    callbackCompassBearing(result);
-                });
+                }
+
             }
         }
 
