@@ -334,7 +334,6 @@ function wigo_ws_PebbleAdapter(uuid) {
     // tell java to listen for these:
     // Note: For debugging without Pebble support, check for Pebble before calling Pebble function 
     //       when constructing this object. constructor.
-    /////20160713 if (typeof(Pebble) !== "undefined") 
     if (IsPebblePluginValid()) {
         Pebble.registerConnect();
         Pebble.registerDisconnect();

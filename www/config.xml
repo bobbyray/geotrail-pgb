@@ -7,7 +7,7 @@
     <author email="bob.schomburg@wigo.ws" href="http://cordova.io">
         WIGO Dev Team
     </author>
-    <!-- ////20160708 seems to always used index.html for content 
+    <!-- PhoneGAp Build seems to always used index.html for content 
     <content src="Trail2.html" />
     -->
     <access origin="*" />
@@ -17,7 +17,7 @@
     <allow-intent href="sms:*" />
     <allow-intent href="mailto:*" />
     <allow-intent href="geo:*" />
-    <!-- ////20160703 android platform not used 
+    <!--android platform not used for PhoneGap Build 
     <icon platform="android" src="res/android/geotrail512x512.png" />
     <platform name="android">
         <allow-intent href="market:*" />
@@ -31,7 +31,7 @@
         <plugin spec="https://github.com/apache/cordova-plugin-file.git#4.1.0" source="git" /> 
         -->
         <plugin name="cordova-plugin-dialogs" source="pgb" spec="1.1.1" />     
-        <!-- ////20160708  cordova-plugin-file is installed by cordova-plug-in-file-transfer   
+        <!-- cordova-plugin-file is installed by cordova-plug-in-file-transfer   
         <plugin name="cordova-plugin-file" source="pgb" spec="2.0.0" /> 
         --> 
         <plugin name="cordova-plugin-file-transfer" source="pgb" spec="1.1.0" /> 
@@ -48,8 +48,4 @@
         <plugin spec="https://github.com/wnyc/cordova-plugin-wakeuptimer.git#1.0.1" source="git" />
         <preference name="StatusBarOverlaysWebView" value="false" /> 
     </platform>
-    <!-- ////20160703 Redo for PhoneGap Build in cloud 
-    <plugin name="cordova-plugin-file" spec="~2.0.0" />
-    <preference name="AndroidPersistentFileLocation" value="Compatibility" />
-    -->
 </widget>
