@@ -2722,8 +2722,8 @@ may not be appropriate for your ablities and that the trails could have inaccura
         pebbleMsg.countVibe = settings.countPebbleVibe;
         pebbleMsg.SetTimeOut(settings.secsGeoTrackingInterval);
         // Start Pebble app if it is enabled.
-        if (settings.bPebbleAlert)
-            pebbleMsg.StartApp();
+        // if (settings.bPebbleAlert)  //#### Put back when Pebble works with ios.
+        //    pebbleMsg.StartApp();    //#### Put back when Pebble works with ios.
 
         trackTimer.dCloseToPathThres = settings.mOffPathThres;
         trackTimer.setIntervalSecs(settings.secsGeoTrackingInterval);
