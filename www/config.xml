@@ -49,7 +49,7 @@
         <plugin spec="https://github.com/wnyc/cordova-plugin-wakeuptimer.git#1.0.1" source="git">
             <param name="ios-package" value="WakeupPlugin"/>
             <param name="onload" value="true" />        
-        /plugin>
+        </plugin>
         <preference name="StatusBarOverlaysWebView" value="false" /> 
     </platform>
 </widget>
