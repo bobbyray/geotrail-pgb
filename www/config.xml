@@ -46,7 +46,10 @@
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
-        <plugin spec="https://github.com/wnyc/cordova-plugin-wakeuptimer.git#1.0.1" source="git" />
+        <plugin spec="https://github.com/wnyc/cordova-plugin-wakeuptimer.git#1.0.1" source="git" 
+            <param name="ios-package" value="WakeupPlugin"/>
+            <param name="onload" value="true" />        
+        /plugin>
         <preference name="StatusBarOverlaysWebView" value="false" /> 
     </platform>
 </widget>
