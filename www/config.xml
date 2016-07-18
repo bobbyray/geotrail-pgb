@@ -42,11 +42,11 @@
         <!-- cordova-plugin-whitelist not found. 
         <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" />
         -->
-        <gap:plugin name="com.phonegap.plugins.facebookconnect" version="0.8.0">
+        <gap:plugin name="com.phonegap.plugins.facebookconnect" version="0.9.0">
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
-        <plugin spec="https://github.com/wnyc/cordova-plugin-wakeuptimer.git#1.0.0" source="git"/>
+        <plugin spec="https://github.com/wnyc/cordova-plugin-wakeuptimer.git#1.0.1" source="git"/>
         <preference name="StatusBarOverlaysWebView" value="false" /> 
     </platform>
 </widget>
