@@ -60,8 +60,7 @@
         </plugin>
         -->
 
-        <plugin 
-            spec="https://github.com/Telerik-Verified-Plugins/Facebook/releases" source="git"" >
+        <plugin spec="https://github.com/Telerik-Verified-Plugins/Facebook/releases" source="git" >
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </plugin>
