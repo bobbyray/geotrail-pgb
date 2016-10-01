@@ -52,8 +52,8 @@
         </gap:plugin>
         -->
         <!-- $$$$ fix here, source=git, spec=0.12.0, params? -->
-        <plugin name="com.phonegap.plugins.facebookconnect" >
-            spec="https://github.com/tvhnet2014/pros-cordova-facebook.git source="git""
+        <plugin name="com.phonegap.plugins.facebookconnect" 
+            spec="https://github.com/tvhnet2014/pros-cordova-facebook.git source="git"" >
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </plugin>
