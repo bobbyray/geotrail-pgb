@@ -53,6 +53,10 @@
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
         -->
+        <gap:plugin name="com.phonegap.plugins.facebookconnect" version="0.11.0">
+            <param name="APP_ID" value=" 694318660701967" />
+            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
+        </gap:plugin>
          
          <!-- ////20161002 #0.12.0 not found 
         <plugin name="com.phonegap.plugins.facebookconnect" 
@@ -62,11 +66,13 @@
         </plugin>
         -->
 
+        <!-- ////2016091002 
         <plugin name="com.phonegap.plugins.facebookconnect" 
             spec="https://www.npmjs.com/package/cordova-plugin-facebookconnect-orlando#0.11.0" source="npm">
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </plugin>
+        -->
 
         <!-- ////20161002
         <plugin name="com.phonegap.plugins.facebookconnect"
