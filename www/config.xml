@@ -40,19 +40,17 @@
         <plugin name="cordova-plugin-file-transfer" source="pgb" spec="1.1.0" /> 
         <plugin name="cordova-plugin-geolocation" source="pgb" spec="1.0.0" /> 
         <plugin name="cordova-plugin-vibration" source="pgb" spec="1.2.0" /> 
-        <!-- ////2016102 Is device orientation needed, seems to cause CDVCompass compiler error 
+        <!-- ////2016102 Undo comment out. Is device orientation needed, seems to cause CDVCompass compiler error --> 
         <plugin name="org.apache.cordova.device-orientation" spec="0.3.11" source="pgb" />
-        -->
         <plugin name="com.phonegap.plugin.statusbar" spec="1.1.0" source="pgb" />
         <!-- cordova-plugin-whitelist not found. 
         <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" />
         -->
-        <!-- Putback  ////20161001 try using from github directly, 0.8.0, 0.8.0, 0.10.0, 0.12.0 all fail
         <gap:plugin name="com.phonegap.plugins.facebookconnect" version="0.9.0">
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
-        -->
+
         <!-- ////20161002  
         <gap:plugin name="com.phonegap.plugins.facebookconnect" src="npm" version="0.11.0">
             <param name="APP_ID" value=" 694318660701967" />
@@ -60,11 +58,13 @@
         </gap:plugin>
         -->
 
+        <!-- //20161092 worked for phonegap-version cli-5.4.1, but went back to phone-gap plugin version 0.9.0 
         <gap:plugin 
             src="https://github.com/dhatawesomedude/phonegap-facebook-plugin.git">
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
+        --> 
          
          <!-- ////20161002 #0.12.0 not found 
         <plugin name="com.phonegap.plugins.facebookconnect" 
