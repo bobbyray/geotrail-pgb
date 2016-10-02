@@ -51,9 +51,10 @@
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
         -->
-
+         
+         <!-- ////20161002 #0.12.0 not found -->
         <plugin name="com.phonegap.plugins.facebookconnect" 
-            spec="https://github.com/Wizcorp/phonegap-facebook-plugin#0.12.0" >
+            spec="https://github.com/Wizcorp/phonegap-facebook-plugin#0.9.0" >
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </plugin>
