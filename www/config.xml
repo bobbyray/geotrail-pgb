@@ -61,7 +61,7 @@
         -->
 
         <gap:plugin 
-            src="https://github.com/dhatawesomedude/phonegap-facebook-plugin#0.11.0">
+            src="https://github.com/dhatawesomedude/phonegap-facebook-plugin.git">
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
