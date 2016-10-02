@@ -40,7 +40,9 @@
         <plugin name="cordova-plugin-file-transfer" source="pgb" spec="1.1.0" /> 
         <plugin name="cordova-plugin-geolocation" source="pgb" spec="1.0.0" /> 
         <plugin name="cordova-plugin-vibration" source="pgb" spec="1.2.0" /> 
+        <!-- ////2016102 Is device orientation needed, seems to cause CDVCompass compiler error 
         <plugin name="org.apache.cordova.device-orientation" spec="0.3.11" source="pgb" />
+        -->
         <plugin name="com.phonegap.plugin.statusbar" spec="1.1.0" source="pgb" />
         <!-- cordova-plugin-whitelist not found. 
         <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" />
