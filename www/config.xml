@@ -52,13 +52,13 @@
         </gap:plugin>
         -->
 
-        <!-- ////20161001 fix here $$$$ source=git, spec=0.12.0, params? 
-        <plugin 
-            spec="https://github.com/tvhnet2014/pros-cordova-facebook.git" source="git"" >
+        <plugin name="com.phonegap.plugins.facebookconnect"
+            spec="https://github.com/tvhnet2014/pros-cordova-facebook.git#0.12.0" source="git"" >
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </plugin>
-        -->
+
+        <!-- //// npm i cordova-plugin-pros-facebook -->
 
         <plugin spec="https://github.com/Telerik-Verified-Plugins/Facebook/releases#1.7.1.3" source="git" >
             <param name="APP_ID" value=" 694318660701967" />
