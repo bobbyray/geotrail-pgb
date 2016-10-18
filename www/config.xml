@@ -29,19 +29,19 @@
     <platform name="ios">
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
-        <plugin name="cordova-plugin-dialogs" source="pgb" spec="1.1.1" />     
+        <plugin name="cordova-plugin-dialogs" source="npm" spec="1.1.1" />     
         <!-- cordova-plugin-file is installed by cordova-plug-in-file-transfer   
         <plugin name="cordova-plugin-file" source="pgb" spec="2.0.0" /> 
         --> 
-        <plugin name="cordova-plugin-file-transfer" source="pgb" spec="1.1.0" /> 
-        <plugin name="cordova-plugin-geolocation" source="pgb" spec="1.0.0" /> 
-        <plugin name="cordova-plugin-vibration" source="pgb" spec="1.2.0" /> 
-        <plugin name="org.apache.cordova.device-orientation" spec="0.3.11" source="pgb" />
-        <plugin name="com.phonegap.plugin.statusbar" spec="1.1.0" source="pgb" />
+        <plugin name="cordova-plugin-file-transfer" source="npm" spec="1.1.0" /> 
+        <plugin name="cordova-plugin-geolocation" source="npm" spec="1.0.0" /> 
+        <plugin name="cordova-plugin-vibration" source="npm" spec="1.2.0" /> 
+        <plugin name="org.apache.cordova.device-orientation" spec="0.3.11" source="npm" />
+        <plugin name="com.phonegap.plugin.statusbar" spec="1.1.0" source="npm" />
         <!-- cordova-plugin-whitelist not found. 
         <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" />
         -->
-        <gap:plugin name="com.phonegap.plugins.facebookconnect" version="0.9.0">
+        <gap:plugin name="com.phonegap.plugins.facebookconnect" version="0.9.0" source="npm">
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
