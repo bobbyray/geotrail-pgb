@@ -41,10 +41,19 @@
         <!-- cordova-plugin-whitelist not found. 
         <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" />
         -->
+        
+        <!-- ////20161018 
         <gap:plugin name="com.phonegap.plugins.facebookconnect" version="0.9.0" >
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
+        -->
+        <gap:plugin 
+            src="https://github.com/Wizcorp/phonegap-facebook-plugin.git#0.9.0" >
+            <param name="APP_ID" value=" 694318660701967" />
+            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
+        </gap:plugin>
+
 
         <!-- //20161092 Build worked for phonegap-version cli-5.4.1, but went back to FacebookConnectPlugin version 0.9.0 
                         phone-gap cli-6.3.0 fails to build.
