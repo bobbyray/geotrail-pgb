@@ -37,19 +37,12 @@
         <plugin name="cordova-plugin-geolocation" source="npm" spec="1.0.0" /> 
         <plugin name="cordova-plugin-vibration" source="npm" spec="1.2.0" /> 
         <plugin name="org.apache.cordova.device-orientation" spec="0.3.11" source="npm" />
-        <!-- <plugin name="com.phonegap.plugin.statusbar" spec="1.1.0" source="pgb" /> -->
         <plugin name="cordova-plugin-statusbar" spec="2.2.0" source="npm" />
 
         <!-- cordova-plugin-whitelist not found. 
         <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" />
         -->
         
-        <!-- ////20161018 
-        <gap:plugin name="com.phonegap.plugins.facebookconnect" version="0.9.0" >
-            <param name="APP_ID" value=" 694318660701967" />
-            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
-        </gap:plugin>
-        -->
         <gap:plugin 
             src="https://github.com/Wizcorp/phonegap-facebook-plugin.git#0.9.0" >
             <param name="APP_ID" value=" 694318660701967" />
