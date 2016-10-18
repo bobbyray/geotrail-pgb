@@ -1,7 +1,7 @@
 /* Over-ride for iPHone in status msg area. */
 .wigo_ws_StatusMsg {
     background-color: aliceblue;    
-    font-size: 1.0em;
+    font-size: 1.1em;
     width: 100%;
     top: 0px;
     left: 0px;
