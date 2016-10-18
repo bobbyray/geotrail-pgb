@@ -38,7 +38,7 @@
         <plugin name="cordova-plugin-vibration" source="npm" spec="1.2.0" /> 
         <plugin name="org.apache.cordova.device-orientation" spec="0.3.11" source="npm" />
         <!-- <plugin name="com.phonegap.plugin.statusbar" spec="1.1.0" source="pgb" /> -->
-        <plugin name="com.phonegap.plugin.statusbar" spec="2.2.0" source="npm" />
+        <plugin name="cordova-plugin-statusbar" spec="2.2.0" source="npm" />
 
         <!-- cordova-plugin-whitelist not found. 
         <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" />
