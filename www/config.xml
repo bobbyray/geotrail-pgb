@@ -68,8 +68,8 @@
 
         <plugin spec="https://github.com/wnyc/cordova-plugin-wakeuptimer.git#1.0.1" source="git"/>
         <preference name="StatusBarOverlaysWebView" value="false" /> 
-        <preference name="StatusBarBackgroundColor" value="#FFFFFF"/>
-        <preference name="StatusBarStyle" value="lightcontent" />        
+        <preference name="StatusBarBackgroundColor" value="#A7A7A7"/>
+        <preference name="StatusBarStyle" value="blacktranslucent" />        
 
         <!-- phone-gap version cli-6.3.0 fails to build. I think 6 or greater fails. -->
         <preference name="phonegap-version" value="cli-5.4.1" />
