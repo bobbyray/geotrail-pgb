@@ -26,7 +26,7 @@
         <allow-intent href="market:*" />
     </platform>
     -->
-    <icon platform="android" src="res/android/geotrail512x512.png" />
+    <icon platform="ios" src="res/android/geotrail512x512.png" />
     <platform name="ios">
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
