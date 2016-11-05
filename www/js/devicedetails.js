@@ -1,5 +1,9 @@
 'use strict';
-
+/* 
+Copyright (c) 2015, 2016 Robert R Schomburg
+Licensed under terms of the MIT License, which is given at
+https://github.com/bobbyray/MitLicense/releases/tag/v1.0
+*/
 // Returns type of type for a build.
 // Returns integer for type of device.
 // Retmarks:
