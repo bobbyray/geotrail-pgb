@@ -2063,7 +2063,7 @@ function wigo_ws_View() {
 
                             trackTimer.showCurGeoLocation(trackTimer.dCloseToPathThres, function(updResult, positionError){
                                 if (positionError) {
-                                    ShowGeoLocPositionError(positionError)
+                                    ShowGeoLocPositionError(positionError);
                                 } else if (updResult) {
                                     ShowGeoLocUpdateStatus(updResult);
                                 }
