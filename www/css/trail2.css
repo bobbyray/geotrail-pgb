@@ -633,8 +633,9 @@ label {
 #mapTrackToggle, #mapPhAlertToggle {
     height: 100%;
     border: 1px solid black;
-    width: 31%;
+    width: auto;  /* ////20161112 was 33% */
     float: right;
+    margin-left: 2px; /* ////20161112 added */
 }
 
 #closeDialogBar, #confirmDialogBar {
