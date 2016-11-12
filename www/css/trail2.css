@@ -638,6 +638,12 @@ label {
     margin-left: 2px; /* ////20161112 added */
 }
 
+#mapTrackToggle span.wigo_ws_OnCtrl, #mapTrackToggle span.wigo_ws_OffCtrl, 
+#mapPhAlertToggle span.wigo_ws_OnCtrl, #mapPhAlertToggle span.wigo_ws_OffCtrl  { /* ////20161112 added */
+    margin-left: 1px;
+    margin-right: 1px;  
+}
+
 #closeDialogBar, #confirmDialogBar {
     position: fixed;
     bottom: 0px;
