@@ -17,5 +17,8 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
 function Wigo_Ws_getDeviceType() {
     //var nDevice = app.deviceDetails.DeviceEnum().android;
     var nDevice = app.deviceDetails.DeviceEnum().iPhone;
+    // Set flag to indicate if tracking uses navigator.geolocation.watchtPosition(..)
+    // or a wakeup timer and navigator.geolocation.getCurrentPosition(..).
+    deviceDetails.bUseWatchPositionForTracking = true;
     return nDevice;
 }

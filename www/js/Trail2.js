@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Release buld for Google Play on 09/20/2016 16:03
-    var sVersion = "1.1.021  11/05/2016_1146"; // Constant string for App version.
+    var sVersion = "1.1.021  11/11/2016_1259"; // Constant string for App version.
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -763,7 +763,7 @@ function wigo_ws_View() {
         titleBar.scrollIntoView();   
     });
 
-    // Selects droplist for Tracking on/off and runs the tract timer accordingly.
+    // Selects state for Tracking on/off and runs the tract timer accordingly.
     // Arg: 
     //  bTracking: boolean to indicate tracking is on (true) or off (false).
     function SelectAndRunTrackTimer(bTracking) {
@@ -1972,8 +1972,11 @@ function wigo_ws_View() {
     // Get current geo location, show on the map, and update status in phone and Pebble.
     function DoGeoLocation() {
         that.ShowStatus("Getting Geo Location ...", false);
-        TrackGeoLocation(trackTimer.dCloseToPathThres, function (updateResult) {
-            ShowGeoLocUpdateStatus(updateResult);
+        TrackGeoLocation(trackTimer.dCloseToPathThres, function (updateResult, positionError) {
+            if (positionError)
+                ShowGeoLocPositionError(positionError); 
+            else 
+                ShowGeoLocUpdateStatus(updateResult);
         });
     }
 
@@ -2039,7 +2042,7 @@ function wigo_ws_View() {
     // Remarks: Provides the callback function that is called after each timer period completes.
     function RunTrackTimer() {
         if (trackTimer.bOn) {
-            var bInProgress = false;
+            ////20161110???? var bInProgress = false;
             trackTimer.SetTimer(function (result) {
                 if (result.bError) {
                     trackTimer.ClearTimer();
@@ -2048,18 +2051,29 @@ function wigo_ws_View() {
                     alerter.DoAlert();
                     pebbleMsg.Send("Tracking timer failed", true, false); // vibrate, no timeout.
                 } else {
-                    if (bInProgress)
-                        return;
-                    bInProgress = true;
+                    ////20161110???? if (bInProgress)
+                    ////20161110????     return;
+                    ////20161110???? bInProgress = true;
                     if (result.bRepeating) {
                         if (map.IsPathDefined()) {
-                            DoGeoLocation();
+                            ////20161108 DoGeoLocation();
+                            ////20161110 trackTimer.showCurGeoLocation(trackTimer.dCloseToPathThres, function(updResult){
+                            ////20161110     ShowGeoLocUpdateStatus(updResult);
+                            ////20161110 });
+
+                            trackTimer.showCurGeoLocation(trackTimer.dCloseToPathThres, function(updResult, positionError){
+                                if (positionError) {
+                                    ShowGeoLocPositionError(positionError)
+                                } else if (updResult) {
+                                    ShowGeoLocUpdateStatus(updResult);
+                                }
+                            });
                         }
                     } else {
                         trackTimer.ClearTimer();
                         ShowGeoTrackingOff();
                     }
-                    bInProgress = false;
+                    ////20161110???? bInProgress = false;
                 }
             });
         } else {
@@ -2399,9 +2413,9 @@ function wigo_ws_View() {
     function ShowSettingsDiv(bShow) {
         if (app.deviceDetails.isiPhone()) { 
             // Do not show settings for tracking nor Pebble.
-            ShowElement(holderAllowGeoTracking, false);
-            ShowElement(holderEnableGeoTracking, false);
-            ShowElement(holderGeoTrackingSecs, false);
+            //???? ShowElement(holderAllowGeoTracking, false);
+            //???? ShowElement(holderEnableGeoTracking, false);
+            //???? ShowElement(holderGeoTrackingSecs, false);
             ShowElement(holderPebbleAlert, false);
             ShowElement(holderPebbleVibeCount, false);
         }
@@ -2554,9 +2568,12 @@ function wigo_ws_View() {
         return bOn;
     }
 
-    var trackTimer = new GeoTrackTimer(); // Timer for tracking geo location.
-    trackTimer.bOn = false; // Set from settings later. 
+    ////20161110 var trackTimer = new GeoTrackTimer(); // Timer for tracking geo location.
+    ////20161110 move tracTimer below
+    ////20161110 var trackTimer = app.deviceDetails.bUseWatchPositionForTracking ? new GeoTrackWatcher() : new GeoTrackTimer();
+    ////20161110 trackTimer.bOn = false; // Set from settings later. 
 
+    /* ////20161105 Redo GeoTrackTimer()
     // Object for tracking geo location on periodic time intervals.
     function GeoTrackTimer() {
         var that = this;
@@ -2665,41 +2682,368 @@ function wigo_ws_View() {
         var myTimerId = null;
         var myTimerCallback = null;
     }
+    */
 
+
+    ////20161105 Change to use watchPosition of location object.
+    // Object for tracking geo location on periodic time intervals.
+    function GeoTrackTimer() {
+        var that = this;
+        this.bOn = false; // Boolean indicating timer runs repeatedly.
+
+        // Threshold in meters for distance to nearest point on path.
+        // If distance from geolocation to nearest point on the path
+        // is > dCloseToPathThres, then geo location is off-path.
+        this.dCloseToPathThres = -1;
+
+        // Sets period of timer interval.
+        // Arg:
+        //  nSecs: float for number of seconds for interval period. 
+        this.setIntervalSecs = function (nSecs) {
+            msInterval = nSecs * 1000;
+        }
+        // Returns number of seconds as integer for timer interval.
+        this.getIntervalSecs = function () {
+            var bSecs = msInterval / 1000;
+            return bSecs;
+        };
+
+        // Returns number of milliseconds as integer for timer interval.  
+        this.getIntervalMilliSecs = function() {  ////20161111 added
+            return msInterval;
+        }
+
+        // Starts or clears the timer.
+        // If this.bOn is false, clears the time (stops the timer).
+        // If this.bOn is true, timer runs repeated based on timer interval.
+        // Arg:
+        //  callback is function called when interval expires.
+        //  Callback Signature:
+        //    Arg: 
+        //      updateResult: object. {bRepeating: boolean, bError: boolean} 
+        //        bRepeating: boolean indicating timer is repeating.
+        //          Note: when bRepeating is false, the timer has been cleered.           
+        //        bError: boolean indicating an error.
+        //    Return: not used.
+        this.SetTimer = function (callback) {
+            if (this.bOn) {
+                // Set new timer id as integer for current time.
+                myTimerId = Date.now();
+                // Set wake wake for time interval.
+                var nSeconds = Math.round(msInterval / 1000);
+                myTimerCallback = callback;
+                if (window.wakeuptimer) {
+                    window.wakeuptimer.snooze(
+                        SnoozeWakeUpSuccess,
+                        SnoozeWakeUpError,
+                        {
+                            alarms: [{
+                                type: 'snooze',
+                                time: { seconds: nSeconds }, // snooze for nSeconds 
+                                extra: { id: myTimerId } // json containing app-specific information to be posted when alarm triggers
+                            }]
+                        }
+                    );
+                }
+            } else {
+                // Clear timer.
+                myTimerId = null;
+                myTimerCallback = null;
+                if (callback)
+                    callback(false);
+            }
+        }
+
+        // Unconditionally clears (stops) the timer.
+        this.ClearTimer = function () {
+            this.bOn = false;
+            this.SetTimer(null);
+        };
+
+        // ////20161108 added this function property.
+        // Gets current geo location and shows the location figures on the map.
+        // Args:
+        //  dCloseToPath: meters. If distance to nearest point on path is < dCloseToPath,
+        //      then the location figures are not shown. (Specify as less than 0 to always
+        //      show the location figures.)
+        //  callbackUpd: Optional. Callback function called asynchronously after geolocation has been updated on map. 
+        //  Callback Signature:
+        //    Args: 
+        //      updResult: {bToPath: boolean, dToPath: float, bearingToPath: float, bRefLine: boolean, bearingRefLine: float, 
+        //                  bCompass: boolean, bearingCompass: float, compassError: CompassError or null} or null.
+        //        The object is returned by method property SetGeoLocationUpdate(..) of wigo_ws_GeoPathMap object.
+        //        See description of SetGeoLocationUpdate(..) method for more details. 
+        //        If updResult is null, there is error given by positionError arg.
+        //      positionError: PostionError related to Navigator.geoloation object or null. null for no position error.
+        //      Return: not used.   
+        this.showCurGeoLocation = function(dCloseToPath, callbackUpd) { ////20161108 added, $$$$ fix
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    // Successfully obtained location.
+                    //  position is a Position object:
+                    //      .coords is a coordinates object:
+                    //          .coords.latitude  is latitude in degrees
+                    //          .coords.longitude is longitude in degrees 
+                    //      position has other members too. See spec on web for navigator.geolocation.getCurrentPosition.
+                    var location = L.latLng(position.coords.latitude, position.coords.longitude);
+                    map.SetGeoLocationUpdate(location, dCloseToPath, function(updResult){
+                        if (callbackUpd)
+                            callbackUpd(updResult, null);
+                    }); 
+                },
+                function (positionError) {
+                    // Error occurred trying to get location.
+                    ////20161110 var sMsg = "Geolocation Failed!\nCheck your device settings for this app to enable Geolocation.\n" + positionError.message;
+                    ////20161110 that.ShowStatus(sMsg);
+                    if (callbackUpd)
+                        callbackUpd(null, positionError);
+                },
+                geoLocationOptions);
+        };
+
+
+        // Returns new object for this.SetTimer() callback result. 
+        // Remarks: A property method for extended class to get an 
+        // update result object. Normally not called.
+        this.newUpdateResult = function() { ////20161108 added
+            return { bRepeating: this.bOn, bError: false };
+        };
+
+        // Event handler success snooze wake up.
+        function SnoozeWakeUpSuccess(result) {
+            if (typeof(result) === 'string') {
+                console.log('wakeup string result:' + result);
+                // Note: extra is not member of result here.
+                if (result === 'OK') {
+                    if (myTimerCallback) {
+                        ////20161108 myTimerCallback({ bRepeating: that.bOn, bError: false });
+                        myTimerCallback(that.newUpdateResult());
+                    }
+                }
+            } else if (result.type === 'wakeup') {
+                console.log('wakeup alarm detected--' + result.extra);
+                var extra = JSON.parse(result.extra);
+                if (extra.id === myTimerId) {
+                    if (that.bOn)
+                        that.SetTimer(myTimerCallback);
+                }
+            } else if (result.type === 'set') {
+                console.log('wakeup alarm set--' + result);
+                // Note: extra is not member of result here.
+                // Note: Do NOT do callback here because this case does not
+                //       occur the first time the timer is started.
+                //       The result of type string === 'OK' occurs first time and
+                //       every time after that when timer is set.
+            } else {
+                console.log('wakeup unhandled type (' + result.type + ')');
+            }
+        }
+
+        // Event handler for snooze wake up error.
+        function SnoozeWakeUpError(result) {
+            if (typeof (result) === 'string')
+                console.log('wakeup string result:' + result);
+            else 
+                console.log('Error for wakeup type (' + result.type + ')');
+            if (myTimerCallback) {
+                ////20161108 myTimerCallback({bRepeating: that.bOn, bError: true });
+                var errorResult = that.newUpdateResult();
+                errorResult.bError = true;
+                myTimerCallback(errorResult);
+            }
+        }
+
+
+        var msInterval = 15 * 1000;    // Interval period of timer in milliseconds.
+        var myTimerId = null;
+        var myTimerCallback = null;
+
+        ////20161109NotUsedHere var myWatchId = null;
+        ////20161109NotUsedHere var myWatchCallback = null;
+    }
+
+
+    // Object for tracking geo location using window.navigator.geolocation.watchPosition(..).
+    // Rather than using a timer to get new geolocation, navigator.geolocation.watchPosition(..)
+    // is used to obtain updates to the current geolocation when it changes.
+    // prototype is GeoLocationTimer object.
+    function GeoTrackWatcher() { ////20161108 added
+        var that = this;
+        // Over-ride SetTimer(callback) in prototype. Use navigator.geolocation.watchPosition(...) to track 
+        // current geolocation.
+        this.SetTimer = function(callback) { ////20161107 added
+            ////20161110 var geoLocationOptions = { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 };            
+            if (this.bOn) {
+                myWatchCallback = callback;
+                myWatchId = navigator.geolocation.watchPosition(
+                    function (position) {
+                        // Success.
+                        curPositionError = null;
+                        curPosition = position;
+                        if (myWatchCallback)
+                            myWatchCallback(that.newUpdateResult());
+                    },
+                    function (positionError) {
+                        // Error. 
+                        curPositionError = positionError;
+                        curPosition = null;
+                        if (myWatchCallback) {
+                            // Note: Return successful result, evern though there is an error.
+                            //       The error is indicated when  this.showCurGeoLocation(..) is called.
+                            myWatchCallback(that.newUpdateResult());
+                        }
+                    },
+                    geoLocationOptions    
+                );
+            } else {
+                // Cleer watch.
+                if (myWatchId)
+                    navigator.geolocation.clearWatch(myWatchId); 
+                myWatchId = null;
+                myWatchCallback = null;
+                curPosition = null;
+                curPositionError = null;
+
+                curMapUpdateLocation = null;  // L.latLng(..) object defined in Leaflet for current location shown on map.
+                curMapUpdateTimeStamp = null;    // Number for timestamp in milliseconds current location shown on map. 
+            }
+
+        };
+
+
+        // Gets current geo location and shows the location figures on the map.
+        // Args:
+        //  dCloseToPath: meters. If distance to nearest point on path is < dCloseToPath,
+        //      then the location figures are not shown. (Specify as less than 0 to always
+        //      show the location figures.)
+        //  callbackUpd: Optional. Callback function called asynchronously after geolocation has been updated on map. 
+        //  Callback Signature:
+        //    Args: 
+        //      updResult: {bToPath: boolean, dToPath: float, bearingToPath: float, bRefLine: boolean, bearingRefLine: float, 
+        //                  bCompass: boolean, bearingCompass: float, compassError: CompassError or null} or null.
+        //        The object is returned by method property SetGeoLocationUpdate(..) of wigo_ws_GeoPathMap object.
+        //        See description of SetGeoLocationUpdate(..) method for more details. 
+        //        If updResult is null, there is error given by positionError arg.
+        //      positionError: PostionError related to Navigator.geoloation object or null. null for no position error.
+        //      Return: not used.   
+        this.showCurGeoLocation = function(dCloseToPath, callbackUpd) { ////20161108 added
+            if (!curPositionError && curPosition) {
+                // Successfully obtained location.
+                //  position is a Position object:
+                //      .coords is a coordinates object:
+                //          .coords.latitude  is latitude in degrees
+                //          .coords.longitude is longitude in degrees 
+                //      position has other members too. See spec on web for navigator.geolocation.getCurrentPosition.
+                var location = L.latLng(curPosition.coords.latitude, curPosition.coords.longitude);
+                if (IsMapUpdateNeeded(location)) { ////2016111 added if test, body existed before.
+                    map.SetGeoLocationUpdate(location, dCloseToPath, function(updResult){
+                        if (callbackUpd)
+                            callbackUpd(updResult, null);
+                    }); 
+                }
+            } else if (curPositionError) {
+                // Error occurred trying to get current location.
+                ////20161110 var sMsg = "Geolocation Failed!\nCheck your device settings for this app to enable Geolocation.\n" + positionError.message;
+                ////20161110 that.ShowStatus(sMsg);
+                if (callbackUpd)
+                    callbackUpd(null, curPositionError);
+            }
+        };
+
+        // Returns true if next location to show on map is needed or if elasped time from previous update
+        // is greater than the tracking interval.
+        // Saves current location and timestamp when an update is needed.
+        // Arg:
+        //  nextMapUpdateLocation: LatLng object from Leaflet for next location to show on map.
+        // Remarks:
+        // The map needs to be updated if distances has changed by minimum required amount, or
+        // if time since last update update is greater than the tracking interval specified in settings.
+        function IsMapUpdateNeeded(nextMapUpdateLocation) {  ////20161111 added 
+            var bYes = false;
+            if (curMapUpdateLocation) {
+                var distance = curMapUpdateLocation.distanceTo(nextMapUpdateLocation)
+                bYes = distance > minMapUpdateDistance;
+            } else {
+                bYes = true;
+            }
+            if (!bYes) {
+                if (curPosition && curMapUpdateTimeStamp) {
+                    var timestampDif =  curPosition.timestamp - curMapUpdateTimeStamp;
+                    bYes = timestampDif > that.getIntervalMilliSecs();
+                } else {
+                    bYes = true;
+                }
+            }
+
+            if (bYes) {
+                // Update current map position.
+                curMapUpdateLocation = nextMapUpdateLocation;
+                curMapUpdateTimeStamp = curPosition.timestamp;    
+            }
+            
+            return bYes;
+        }
+
+        var myWatchId = null;
+        var myWatchCallback = null;
+        var curPosition = null; // Position object related to Geolocation object implemented by navigator.
+        var curPositionError = null;
+
+        var minMapUpdateDistance = 50;    // Minimum distance in meters from previous map update location to update again. 
+        var curMapUpdateLocation = null;  // L.latLng(..) object defined in Leaflet for current location shown on map.
+        var curMapUpdateTimeStamp = null; // Number for timestamp in milliseconds current location shown on map. 
+    }
+
+    GeoTrackWatcher.prototype = new GeoTrackTimer();
+    GeoTrackWatcher.prototype.constructor = GeoTrackWatcher;
+
+    var trackTimer = app.deviceDetails.bUseWatchPositionForTracking ? new GeoTrackWatcher() : new GeoTrackTimer();
+    
+
+    // Opitons for getting current geolocation.
+    var geoLocationOptions = { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 };
+    ////20161110DidNotHelpForAndroid var geoLocationOptions = { enableHighAccuracy: true, timeout: 30000, maximumAge: 15000 };
 
     // Gets current geo location and shows the location figures on the map.
-    // Arg:
+    // Args:
     //  dCloseToPath: meters. If distance to nearest point on path is < dCloseToPath,
     //      then the location figures are not shown. (Specify as less than 0 to always
     //      show the location figures.)
-    // Arg: 
     //  callbackUpd: Callback function called asynchronously after geolocation has been updated.
-    //      Arg: {bToPath: boolean, dToPath: float, bearingToPath: float, bRefLine: boolean, bearingRefLine: float, 
-    //            bCompass: boolean, bearingCompass: float, compassError: CompassError or null}:
-    //          The arg object returned by method property SetGeoLocationUpdate(..) of wigo_ws_GeoPathMap object.
-    //          See description of SetGeoLocationUpdate(..) method for more details.    
+    //  Callback Signature:
+    //    Args: 
+    //      updResult: {bToPath: boolean, dToPath: float, bearingToPath: float, bRefLine: boolean, bearingRefLine: float, 
+    //                  bCompass: boolean, bearingCompass: float, compassError: CompassError or null} or null.
+    //        The object is returned by method property SetGeoLocationUpdate(..) of wigo_ws_GeoPathMap object.
+    //        See description of SetGeoLocationUpdate(..) method for more details. 
+    //        If updResult is null, there is error given by positionError arg.
+    //      positionError: PostionError object related to Navigator.geolocation object or null. null for no position error.
+    //      Return: not used.   
     function TrackGeoLocation(dCloseToPath, callbackUpd) {
-        var geoLocationOptions = { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 };
+        ////20161108 var geoLocationOptions = { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 };
         navigator.geolocation.getCurrentPosition(
-        function (position) {
-            // Successfully obtained location.
-            //  position is a Position object:
-            //      .coords is a coordinates object:
-            //          .coords.latitude  is latitude in degrees
-            //          .coords.longitude is longitude in degrees 
-            //      position has other members too. See spec on web for navigator.geolocation.getCurrentPosition.
-            var location = L.latLng(position.coords.latitude, position.coords.longitude);
-            map.SetGeoLocationUpdate(location, dCloseToPath, function(updResult){
+            function (position) {
+                // Successfully obtained location.
+                //  position is a Position object:
+                //      .coords is a coordinates object:
+                //          .coords.latitude  is latitude in degrees
+                //          .coords.longitude is longitude in degrees 
+                //      position has other members too. See spec on web for navigator.geolocation.getCurrentPosition.
+                var location = L.latLng(position.coords.latitude, position.coords.longitude);
+                map.SetGeoLocationUpdate(location, dCloseToPath, function(updResult){
+                    if (callbackUpd)
+                        callbackUpd(updResult, null);
+                }); 
+            },
+            function (positionError) {
+                // Error occurred trying to get location.
+                ////20161110 var sMsg = "Geolocation Failed!\nCheck your device settings for this app to enable Geolocation.\n" + positionError.message;
+                ////20161110 that.ShowStatus(sMsg);
                 if (callbackUpd)
-                    callbackUpd(updResult);
-            }); 
-        },
-        function (positionError) {
-            // Error occurred trying to get location.
-            var sMsg = "Geolocation Failed!\nCheck your device settings for this app to enable Geolocation.\n" + positionError.message;
-            that.ShowStatus(sMsg);
-        },
-        geoLocationOptions);
+                    callbackUpd(null, positionError);
+            },
+            geoLocationOptions
+        );
     }
 
     // Shows or hides divOwnerId.
@@ -3074,6 +3418,27 @@ function wigo_ws_View() {
             sMsg += PathDistancesPebbleMsg(upd); 
             pebbleMsg.Send(sMsg, true, trackTimer.bOn); // vibration, timeout if tracking.
         }
+    }
+
+    // Shows status message for a error obtaining current geolocation.
+    // Arg:
+    //  positionError: PositionError object related to navigator.geolocation object.
+    function ShowGeoLocPositionError(positionError) { ////20161110 added
+        var sMsg = "Geolocation Failed!\nCheck your device settings for this app to enable Geolocation.\n" + positionError.message;
+        ////20161110  that.ShowStatus(sMsg);
+        console.log(sMsg);
+        switch (positionError.code) {
+            case 1: 
+                sMsg = "Permission to use geolocation denied.\nCheck your device settings for this app to enable geolocation.";
+                break;
+            case 2:
+                sMsg = "Failed to get geolocation.";
+                break;
+            case 3:
+                sMsg = "Timeout occurred trying to get geolocation.";
+                break;
+        }   
+        that.ShowStatus(sMsg);
     }
 
     // ** Private members for Open Source map
@@ -3684,8 +4049,8 @@ function wigo_ws_Controller() {
     view.onGetSettings = function () {
         var settings = model.getSettings();
         if (app.deviceDetails.isiPhone()) {  
-            // Do no allow automatic geo tracking nor Pebble watch.
-            settings.bAllowGeoTracking = false;
+            //???? // Do no allow automatic geo tracking nor Pebble watch.
+            //???? settings.bAllowGeoTracking = false;
             settings.bPebbleAlert = false; 
         }
         return settings;
@@ -3983,7 +4348,9 @@ function wigo_ws_Controller() {
 // Set global var for the controller and therefore the view and model.
 window.app = {};
 window.app.deviceDetails = new Wigo_Ws_CordovaDeviceDetails();  
-window.app.deviceDetails.setDevice(Wigo_Ws_getDeviceType());    
+////20161107 window.app.deviceDetails.setDevice(Wigo_Ws_getDeviceType());
+Wigo_Ws_InitDeviceDetails(window.app.deviceDetails);
+
 window.app.OnDocReady = function (e) {
     // Create the controller and therefore the view and model therein.
     window.app.ctlr = new wigo_ws_Controller();
