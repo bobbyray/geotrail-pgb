@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Release buld for Google Play on 09/20/2016 16:03
-    var sVersion = "1.1.021  11/11/2016_1259"; // Constant string for App version.
+    var sVersion = "1.1.021  11/13/2016_1142"; // Constant string for App version.
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -3001,7 +3001,8 @@ function wigo_ws_View() {
     
 
     // Opitons for getting current geolocation.
-    var geoLocationOptions = { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 };
+    // geoLocationOptions.maximumAge is 0 to always get new geolocation, Otherwise it is max time to use cached location in milliseconds.
+    var geoLocationOptions = { enableHighAccuracy: true, timeout: 30000, maximumAge: 10000 };  
     ////20161110DidNotHelpForAndroid var geoLocationOptions = { enableHighAccuracy: true, timeout: 30000, maximumAge: 15000 };
 
     // Gets current geo location and shows the location figures on the map.
