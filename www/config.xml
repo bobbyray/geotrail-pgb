@@ -31,6 +31,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <allow-intent href="market:*" />
     </platform>
     -->
+    
     <icon platform="ios" src="res/android/geotrail512x512.png" />
     <platform name="ios">
         <allow-intent href="itms:*" />
@@ -67,6 +68,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         --> 
 
         <plugin spec="https://github.com/wnyc/cordova-plugin-wakeuptimer.git#1.0.1" source="git"/>
+        
         <preference name="StatusBarOverlaysWebView" value="false" /> 
         <preference name="StatusBarBackgroundColor" value="#A7A7A7"/>
         <preference name="StatusBarStyle" value="blacktranslucent" />        
@@ -74,4 +76,9 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <!-- phone-gap version cli-6.3.0 fails to build. I think 6 or greater fails. -->
         <preference name="phonegap-version" value="cli-5.4.1" />
     </platform>
+    
+    <gap:config-file platform="ios" parent="UIBackgroundModes" overwrite="true"> 
+        <array> <string>location</string> </array> 
+    </gap:config-file>    
+    
 </widget>
