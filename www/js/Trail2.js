@@ -2042,7 +2042,6 @@ function wigo_ws_View() {
     // Remarks: Provides the callback function that is called after each timer period completes.
     function RunTrackTimer() {
         if (trackTimer.bOn) {
-            ////20161110???? var bInProgress = false;
             trackTimer.SetTimer(function (result) {
                 if (result.bError) {
                     trackTimer.ClearTimer();
@@ -2051,16 +2050,8 @@ function wigo_ws_View() {
                     alerter.DoAlert();
                     pebbleMsg.Send("Tracking timer failed", true, false); // vibrate, no timeout.
                 } else {
-                    ////20161110???? if (bInProgress)
-                    ////20161110????     return;
-                    ////20161110???? bInProgress = true;
                     if (result.bRepeating) {
                         if (map.IsPathDefined()) {
-                            ////20161108 DoGeoLocation();
-                            ////20161110 trackTimer.showCurGeoLocation(trackTimer.dCloseToPathThres, function(updResult){
-                            ////20161110     ShowGeoLocUpdateStatus(updResult);
-                            ////20161110 });
-
                             trackTimer.showCurGeoLocation(trackTimer.dCloseToPathThres, function(updResult, positionError){
                                 if (positionError) {
                                     ShowGeoLocPositionError(positionError);
@@ -2073,7 +2064,6 @@ function wigo_ws_View() {
                         trackTimer.ClearTimer();
                         ShowGeoTrackingOff();
                     }
-                    ////20161110???? bInProgress = false;
                 }
             });
         } else {
@@ -2459,7 +2449,6 @@ function wigo_ws_View() {
     // Shows or hides the divHelpLicense.
     // Arg:
     //  bShow: boolean to indicate to show.
-    ////201610 var divHelpLicense = document.getElementById('divHelpLicense');
     var divHelpLicense;
     if (app.deviceDetails.isiPhone())
         divHelpLicense = document.getElementById('divHelpIPhoneLicense');
@@ -2568,124 +2557,6 @@ function wigo_ws_View() {
         return bOn;
     }
 
-    ////20161110 var trackTimer = new GeoTrackTimer(); // Timer for tracking geo location.
-    ////20161110 move tracTimer below
-    ////20161110 var trackTimer = app.deviceDetails.bUseWatchPositionForTracking ? new GeoTrackWatcher() : new GeoTrackTimer();
-    ////20161110 trackTimer.bOn = false; // Set from settings later. 
-
-    /* ////20161105 Redo GeoTrackTimer()
-    // Object for tracking geo location on periodic time intervals.
-    function GeoTrackTimer() {
-        var that = this;
-        this.bOn = false; // Boolean indicating timer runs repeatedly.
-
-        // Threshold in meters for distance to nearest point on path.
-        // If distance from geolocation to nearest point on the path
-        // is > dCloseToPathThres, then geo location is off-path.
-        this.dCloseToPathThres = -1;
-
-        // Sets period of timer interval.
-        // Arg:
-        //  nSecs: float for number of seconds for interval period. 
-        this.setIntervalSecs = function (nSecs) {
-            msInterval = nSecs * 1000;
-        }
-        // Returns number of seconds as integer for timer interval.
-        this.getIntervalSecs = function () {
-            var bSecs = msInterval / 1000;
-            return bSecs;
-        };
-
-        // Starts or clears the timer.
-        // If this.bOn is false, clears the time (stops the timer).
-        // If this.bOn is true, timer runs repeated based on timer interval.
-        // Arg:
-        //  callback is function called when interval expires. Signature:
-        //      bRepeating: boolean indicating timer is repeating.
-        //          Note: when bRepeating is false, the timer has been cleered.           
-        this.SetTimer = function (callback) {
-            if (this.bOn) {
-                // Set new timer id as integer for current time.
-                myTimerId = Date.now();
-                // Set wake wake for time interval.
-                var nSeconds = Math.round(msInterval / 1000);
-                myTimerCallback = callback;
-                if (window.wakeuptimer) {
-                    window.wakeuptimer.snooze(
-                        SnoozeWakeUpSuccess,
-                        SnoozeWakeUpError,
-                        {
-                            alarms: [{
-                                type: 'snooze',
-                                time: { seconds: nSeconds }, // snooze for nSeconds 
-                                extra: { id: myTimerId } // json containing app-specific information to be posted when alarm triggers
-                            }]
-                        }
-                    );
-                }
-            } else {
-                // Clear timer.
-                myTimerId = null;
-                myTimerCallback = null;
-                if (callback)
-                    callback(false);
-            }
-        }
-
-        // Unconditionally clears (stops) the timer.
-        this.ClearTimer = function () {
-            this.bOn = false;
-            this.SetTimer(null);
-        }
-
-        // Event handler success snooze wake up.
-        function SnoozeWakeUpSuccess(result) {
-            if (typeof(result) === 'string') {
-                console.log('wakeup string result:' + result);
-                // Note: extra is not member of result here.
-                if (result === 'OK') {
-                    if (myTimerCallback)
-                        myTimerCallback({ bRepeating: that.bOn, bError: false });
-                }
-
-            } else if (result.type === 'wakeup') {
-                console.log('wakeup alarm detected--' + result.extra);
-                var extra = JSON.parse(result.extra);
-                if (extra.id === myTimerId) {
-                    if (that.bOn)
-                        that.SetTimer(myTimerCallback);
-                }
-            } else if (result.type === 'set') {
-                console.log('wakeup alarm set--' + result);
-                // Note: extra is not member of result here.
-                // Note: Do NOT do callback here because this case does not
-                //       occur the first time the timer is started.
-                //       The result of type string === 'OK' occurs first time and
-                //       every time after that when timer is set.
-            } else {
-                console.log('wakeup unhandled type (' + result.type + ')');
-            }
-        }
-
-        // Event handler for snooze wake up error.
-        function SnoozeWakeUpError(result) {
-            if (typeof (result) === 'string')
-                console.log('wakeup string result:' + result);
-            else 
-                console.log('Error for wakeup type (' + result.type + ')');
-            if (myTimerCallback)
-                myTimerCallback({bRepeating: that.bOn, bError: true });
-        }
-
-
-        var msInterval = 15 * 1000;    // Interval period of timer in milliseconds.
-        var myTimerId = null;
-        var myTimerCallback = null;
-    }
-    */
-
-
-    ////20161105 Change to use watchPosition of location object.
     // Object for tracking geo location on periodic time intervals.
     function GeoTrackTimer() {
         var that = this;
@@ -2709,7 +2580,7 @@ function wigo_ws_View() {
         };
 
         // Returns number of milliseconds as integer for timer interval.  
-        this.getIntervalMilliSecs = function() {  ////20161111 added
+        this.getIntervalMilliSecs = function() {  
             return msInterval;
         }
 
@@ -2760,7 +2631,6 @@ function wigo_ws_View() {
             this.SetTimer(null);
         };
 
-        // ////20161108 added this function property.
         // Gets current geo location and shows the location figures on the map.
         // Args:
         //  dCloseToPath: meters. If distance to nearest point on path is < dCloseToPath,
@@ -2776,7 +2646,7 @@ function wigo_ws_View() {
         //        If updResult is null, there is error given by positionError arg.
         //      positionError: PostionError related to Navigator.geoloation object or null. null for no position error.
         //      Return: not used.   
-        this.showCurGeoLocation = function(dCloseToPath, callbackUpd) { ////20161108 added, $$$$ fix
+        this.showCurGeoLocation = function(dCloseToPath, callbackUpd) { 
             navigator.geolocation.getCurrentPosition(
                 function (position) {
                     // Successfully obtained location.
@@ -2793,8 +2663,6 @@ function wigo_ws_View() {
                 },
                 function (positionError) {
                     // Error occurred trying to get location.
-                    ////20161110 var sMsg = "Geolocation Failed!\nCheck your device settings for this app to enable Geolocation.\n" + positionError.message;
-                    ////20161110 that.ShowStatus(sMsg);
                     if (callbackUpd)
                         callbackUpd(null, positionError);
                 },
@@ -2805,7 +2673,7 @@ function wigo_ws_View() {
         // Returns new object for this.SetTimer() callback result. 
         // Remarks: A property method for extended class to get an 
         // update result object. Normally not called.
-        this.newUpdateResult = function() { ////20161108 added
+        this.newUpdateResult = function() { 
             return { bRepeating: this.bOn, bError: false };
         };
 
@@ -2816,7 +2684,6 @@ function wigo_ws_View() {
                 // Note: extra is not member of result here.
                 if (result === 'OK') {
                     if (myTimerCallback) {
-                        ////20161108 myTimerCallback({ bRepeating: that.bOn, bError: false });
                         myTimerCallback(that.newUpdateResult());
                     }
                 }
@@ -2846,7 +2713,6 @@ function wigo_ws_View() {
             else 
                 console.log('Error for wakeup type (' + result.type + ')');
             if (myTimerCallback) {
-                ////20161108 myTimerCallback({bRepeating: that.bOn, bError: true });
                 var errorResult = that.newUpdateResult();
                 errorResult.bError = true;
                 myTimerCallback(errorResult);
@@ -2857,9 +2723,6 @@ function wigo_ws_View() {
         var msInterval = 15 * 1000;    // Interval period of timer in milliseconds.
         var myTimerId = null;
         var myTimerCallback = null;
-
-        ////20161109NotUsedHere var myWatchId = null;
-        ////20161109NotUsedHere var myWatchCallback = null;
     }
 
 
@@ -2867,12 +2730,11 @@ function wigo_ws_View() {
     // Rather than using a timer to get new geolocation, navigator.geolocation.watchPosition(..)
     // is used to obtain updates to the current geolocation when it changes.
     // prototype is GeoLocationTimer object.
-    function GeoTrackWatcher() { ////20161108 added
+    function GeoTrackWatcher() { 
         var that = this;
         // Over-ride SetTimer(callback) in prototype. Use navigator.geolocation.watchPosition(...) to track 
         // current geolocation.
-        this.SetTimer = function(callback) { ////20161107 added
-            ////20161110 var geoLocationOptions = { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 };            
+        this.SetTimer = function(callback) {
             if (this.bOn) {
                 myWatchCallback = callback;
                 myWatchId = navigator.geolocation.watchPosition(
@@ -2926,7 +2788,7 @@ function wigo_ws_View() {
         //        If updResult is null, there is error given by positionError arg.
         //      positionError: PostionError related to Navigator.geoloation object or null. null for no position error.
         //      Return: not used.   
-        this.showCurGeoLocation = function(dCloseToPath, callbackUpd) { ////20161108 added
+        this.showCurGeoLocation = function(dCloseToPath, callbackUpd) { 
             if (!curPositionError && curPosition) {
                 // Successfully obtained location.
                 //  position is a Position object:
@@ -2935,7 +2797,7 @@ function wigo_ws_View() {
                 //          .coords.longitude is longitude in degrees 
                 //      position has other members too. See spec on web for navigator.geolocation.getCurrentPosition.
                 var location = L.latLng(curPosition.coords.latitude, curPosition.coords.longitude);
-                if (IsMapUpdateNeeded(location)) { ////2016111 added if test, body existed before.
+                if (IsMapUpdateNeeded(location)) { 
                     map.SetGeoLocationUpdate(location, dCloseToPath, function(updResult){
                         if (callbackUpd)
                             callbackUpd(updResult, null);
@@ -2943,8 +2805,6 @@ function wigo_ws_View() {
                 }
             } else if (curPositionError) {
                 // Error occurred trying to get current location.
-                ////20161110 var sMsg = "Geolocation Failed!\nCheck your device settings for this app to enable Geolocation.\n" + positionError.message;
-                ////20161110 that.ShowStatus(sMsg);
                 if (callbackUpd)
                     callbackUpd(null, curPositionError);
             }
@@ -2958,7 +2818,7 @@ function wigo_ws_View() {
         // Remarks:
         // The map needs to be updated if distances has changed by minimum required amount, or
         // if time since last update update is greater than the tracking interval specified in settings.
-        function IsMapUpdateNeeded(nextMapUpdateLocation) {  ////20161111 added 
+        function IsMapUpdateNeeded(nextMapUpdateLocation) {  
             var bYes = false;
             if (curMapUpdateLocation) {
                 var distance = curMapUpdateLocation.distanceTo(nextMapUpdateLocation)
@@ -3002,8 +2862,6 @@ function wigo_ws_View() {
 
     // Opitons for getting current geolocation.
     // geoLocationOptions.maximumAge is 0 to always get new geolocation, Otherwise it is max time to use cached location in milliseconds.
-    ////20161110DidNotHelpForAndroid var geoLocationOptions = { enableHighAccuracy: true, timeout: 30000, maximumAge: 15000 };
-    ////20161113 var geoLocationOptions = { enableHighAccuracy: true, timeout: 30000, maximumAge: 10000 };  
     var geoLocationOptions = { enableHighAccuracy: true, timeout: Infinity, maximumAge: 10000 };  
 
     // Gets current geo location and shows the location figures on the map.
@@ -3022,7 +2880,6 @@ function wigo_ws_View() {
     //      positionError: PostionError object related to Navigator.geolocation object or null. null for no position error.
     //      Return: not used.   
     function TrackGeoLocation(dCloseToPath, callbackUpd) {
-        ////20161108 var geoLocationOptions = { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 };
         navigator.geolocation.getCurrentPosition(
             function (position) {
                 // Successfully obtained location.
@@ -3039,8 +2896,6 @@ function wigo_ws_View() {
             },
             function (positionError) {
                 // Error occurred trying to get location.
-                ////20161110 var sMsg = "Geolocation Failed!\nCheck your device settings for this app to enable Geolocation.\n" + positionError.message;
-                ////20161110 that.ShowStatus(sMsg);
                 if (callbackUpd)
                     callbackUpd(null, positionError);
             },
@@ -3425,9 +3280,8 @@ function wigo_ws_View() {
     // Shows status message for a error obtaining current geolocation.
     // Arg:
     //  positionError: PositionError object related to navigator.geolocation object.
-    function ShowGeoLocPositionError(positionError) { ////20161110 added
+    function ShowGeoLocPositionError(positionError) {
         var sMsg = "Geolocation Failed!\nCheck your device settings for this app to enable Geolocation.\n" + positionError.message;
-        ////20161110  that.ShowStatus(sMsg);
         console.log(sMsg);
         switch (positionError.code) {
             case 1: 
@@ -3604,8 +3458,7 @@ function wigo_ws_View() {
     // *** Signin dropdown ctrl
     parentEl = document.getElementById('selectSignInHolder');
     var selectSignIn = new ctrls.DropDownControl(parentEl, "signinDropDown", "Sign-In", null, "img/ws.wigo.dropdownhorizontalicon.png"); 
-    selectSignIn.fill([['set',"Sign In", true],
-                       ['facebook', 'Facebook'],
+    selectSignIn.fill([['facebook', 'Facebook'],
                        ['logout', 'Logout']
                       ]);
 
@@ -3673,8 +3526,7 @@ function wigo_ws_View() {
 
     parentEl = document.getElementById('onlineSelectFind');
     var onlineSelectFind = new ctrls.DropDownControl(parentEl, "onlineSelectFindDropDown", "Find Trails", null, "img/ws.wigo.dropdownicon.png"); 
-    onlineSelectFind.fill([ ['find', 'Find'],
-                            ['home_area', 'Home Area'],
+    onlineSelectFind.fill([ ['home_area', 'Home Area'],
                             ['on_screen', 'On Screen'],
                             ['all_public', 'All Public Trails'],
                             ['all_mine', 'All Mine'],
@@ -4350,7 +4202,6 @@ function wigo_ws_Controller() {
 // Set global var for the controller and therefore the view and model.
 window.app = {};
 window.app.deviceDetails = new Wigo_Ws_CordovaDeviceDetails();  
-////20161107 window.app.deviceDetails.setDevice(Wigo_Ws_getDeviceType());
 Wigo_Ws_InitDeviceDetails(window.app.deviceDetails);
 
 window.app.OnDocReady = function (e) {
