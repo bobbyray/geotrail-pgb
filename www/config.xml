@@ -71,7 +71,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
 
         <plugin spec="https://github.com/wnyc/cordova-plugin-wakeuptimer.git#1.0.1" source="git"/>
         
-        <plugin name="cordova-plugin-local-notifications-mm" source="npm" />
+        <plugin name="cordova-plugin-local-notifications-mm" source="npm" spec="1.0.5" />
         
         <preference name="StatusBarOverlaysWebView" value="false" /> 
         <preference name="StatusBarBackgroundColor" value="#A7A7A7"/>
