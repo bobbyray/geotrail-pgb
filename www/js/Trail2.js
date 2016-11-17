@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Release buld for Google Play on 09/20/2016 16:03
-    var sVersion = "1.1.021  11/17/2016_1259"; // Constant string for App version.
+    var sVersion = "1.1.021  11/17/2016_1411"; // Constant string for App version.
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -2056,7 +2056,7 @@ function wigo_ws_View() {
                                 if (positionError) {
                                     ShowGeoLocPositionError(positionError);
                                 } else if (updResult) {
-                                    ShowGeoLocUpdateStatus(updResult);
+                                    ShowGeoLocUpdateStatus(updResult, true); // true => add notification also when an alert is given for off trail. 
                                 }
                             });
                         }
@@ -3020,6 +3020,7 @@ function wigo_ws_View() {
         // Integer for number of phone beeps.
         this.countPhoneBeep = 0;
 
+        /* ////20161115 redo to also add notification.
         // Issues an alert to devices that are enabled.
         this.DoAlert = function() {
             if (this.bAlertsAllowed) {
@@ -3034,8 +3035,54 @@ function wigo_ws_View() {
                 }
             }
         }
+        */
+
+        // Issues an alert to devices that are enabled.
+        // Arg:
+        //  bNotifyToo boolean, optional. Indicated a notification is added to notification center
+        //             in addition to a beep. Defaults to false. 
+        this.DoAlert = function(bNotifyToo) {
+            if (this.bAlertsAllowed) {
+                if (this.bPhoneEnabled) {
+                    // Issue phone alert.
+                    if (navigator.notification) {
+                        if (this.msPhoneVibe > 0.001)
+                            navigator.notification.vibrate(this.msPhoneVibe);
+                        if (this.countPhoneBeep > 0)
+                            navigator.notification.beep(this.countPhoneBeep);
+                    }
+                    if (typeof bNotifyToo !== 'boolean')
+                        bNotifyToo = false;
+                    if (bNotifyToo)  
+                        DoNotify();
+                }
+            }
+        }
+
 
         // ** Private members
+        function DoNotify () {
+            if (cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+                cordova.plugins.notification.local.schedule({
+                    id: 1, // Use same id replacing any previous notification.
+                    text: FormNotifyText(),
+                    sound: window.app.deviceDetails.isAndroid ? 'file://sound.mp3' : 'file://beep.caf'
+                    ////20161115 every: 'day',
+                    ////20161115 firstAt: next_monday,
+                    ////20161115 data: { key:'value' }
+                });           
+            }
+        }
+
+        
+        // Returns a string for the notification text for the current time and date.
+        function FormNotifyText() {
+            var curDate = new Date(Date.now());
+            var sText = "Off Trail at {0}:{1}, {2} {3}".format(curDate.getHours(), curDate.getMinutes(), MonthName[curDate.getMonth()], curDate.getDate());
+            return sText;
+        } 
+
+        var MonthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     }
 
@@ -3144,7 +3191,9 @@ function wigo_ws_View() {
     //          bCompass: bool, bearingCompass: float, compassError: CompassError or null}:
     //    See SetGeoLocationUpdate(..) member of wigo_ws_GeoPathMap for details about upd, which is returned
     //    by the method. 
-    function ShowGeoLocUpdateStatus(upd) {
+    //  bNotifyToo boolean, optional. true to indicate that a notification is given in addition to a beep 
+    //             when an alert is issued because geolocation is off track. Defaults to false.
+    function ShowGeoLocUpdateStatus(upd, bNotifyToo) {
         // Return msg for paths distances from start and to end for phone.
         function PathDistancesMsg(upd) {
             // Set count for number of elements in dFromStart or dToEnd arrays.
@@ -3260,7 +3309,7 @@ function wigo_ws_View() {
             sMsg += PathDistancesMsg(upd);
             that.ShowStatus(sMsg, false);
             // Issue alert to indicated off-path.
-            alerter.DoAlert();
+            alerter.DoAlert(bNotifyToo); ////20161115 added bNotifyToo arg
 
             // Issue alert to Pebble watch.
             sMsg = "Off {0} m\n".format(sDtoPath);
