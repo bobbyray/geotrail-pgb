@@ -3120,7 +3120,8 @@ function wigo_ws_View() {
 
             var schedule = {
                     id: 1, // Use same id replacing any previous notification.
-                    text: FormNotifyText(),
+                    title: "GeoTrail Alert",
+                    text: FormNotifyText()
                     //sound: window.app.deviceDetails.isAndroid() ? 'file://sound.mp3' : 'file://beep.caf'
                     ////20161115 every: 'day',
                     ////20161115 firstAt: next_monday,
