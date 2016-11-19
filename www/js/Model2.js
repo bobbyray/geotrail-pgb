@@ -13,6 +13,9 @@ function wigo_ws_GeoTrailSettings() {
     // Float for distance in meters for threshold beyond which nearest distance to path is 
     // considered to be off-path.
     this.mOffPathThres = 30;
+    // Float for distance in meters from previous tracking geolocation for which
+    // alert is issued again when off trail.  
+    this.mOffPathUpdate = 50;  ////20161129 added
     // Boolean indicating geo location tracking is initially enabled.
     // Note: If this.bAllowGeoTracking is false, this.bEnableAbleTracking is ignored
     //       and tracking is not enabled.
@@ -491,6 +494,9 @@ function wigo_ws_Model() {
                 if (typeof(settings.bCompassHeadingVisible) === 'undefined') // 20160609 added.
                     settings.bCompassHeadingVisible = true; 
                 // **
+                //20161119 added member settings.mOffPathUpdate
+                if (!settings.mOffPathUpdate)
+                    settings.mOffPathUpdate = 50; // Default if not already defined.
             }
             return settings;
         };

@@ -2083,6 +2083,8 @@ function wigo_ws_View() {
     var numberGeoTrackingSecs = new ctrls.DropDownControl(holderGeoTrackingSecs, null, 'Geo Tracking Interval', '', 'img/ws.wigo.dropdownhorizontalicon.png');
     var numberGeoTrackingSecsValues = 
     [
+        ['5',   '5 secs'],
+        ['10', '10 secs'],
         ['30', '30 secs'],
         ['40', '40 secs'],
         ['50', '50 secs'],        
@@ -2124,6 +2126,36 @@ function wigo_ws_View() {
         ['1000','1km (1094yds)']
     ];
     numberOffPathThresMeters.fill(numberOffPathThresMetersValues);
+
+    parentEl = document.getElementById('holderOffPathUpdateMeters');
+    var numberOffPathUpdateMeters = new ctrls.DropDownControl(parentEl, null, 'Off Trail Update', '',  'img/ws.wigo.dropdownhorizontalicon.png');
+    var numberOffPathUpdateMetersValues = 
+    [
+        ['0',   '0m (always)'],
+        ['2',   '2m (2yds)'],
+        ['5',   '5m (5yds)'],
+        ['10',  '10m (11yds)'],
+        ['20', '20m (22yds)'],
+        ['30', '30m (33yds)'],
+        ['40', '40m (44yds)'],
+        ['50', '50m (55yds)'],
+        ['60', '60m (66yds)'],
+        ['60', '60m (66yds)'],
+        ['70', '70m (77yds)'],
+        ['80', '80m (87yds)'],
+        ['90', '90m (98yds)'],
+        ['100', '100m (109yds)'],
+        ['200', '200m (219yds)'],
+        ['300', '300m (328yds)'],
+        ['400', '400m (437yds)'],
+        ['500', '500m (547yds)'],
+        ['600', '600m (656yds)'],
+        ['700', '700m (766yds)'],
+        ['800', '800m (875yds)'],
+        ['900', '900m (984yds)'],
+        ['1000','1km (1094yds)']
+    ];
+    numberOffPathUpdateMeters.fill(numberOffPathUpdateMetersValues);
 
     parentEl = document.getElementById('holderPhoneAlert');
     var selectPhoneAlert = ctrls.NewYesNoControl(parentEl, null, 'Allow Phone Alert', -1);
@@ -2265,6 +2297,9 @@ function wigo_ws_View() {
         if (!IsSelectCtrlOk2(numberOffPathThresMeters)) 
             return false;
 
+        if (!IsSelectCtrlOk2(numberOffPathUpdateMeters))
+            return false;
+
         if (!IsSelectCtrlOk2(numberGeoTrackingSecs))
             return false;
 
@@ -2305,6 +2340,7 @@ function wigo_ws_View() {
         settings.bAllowGeoTracking = selectAllowGeoTracking.getState() === 1;    
         
         settings.mOffPathThres = parseFloat(numberOffPathThresMeters.getSelectedValue());
+        settings.mOffPathUpdate = parseFloat(numberOffPathUpdateMeters.getSelectedValue());   ////20161119 added
         settings.secsGeoTrackingInterval = parseFloat(numberGeoTrackingSecs.getSelectedValue());
         settings.bEnableGeoTracking = selectEnableGeoTracking.getState() === 1;
         settings.bOffPathAlert = selectOffPathAlert.getState() === 1;
@@ -2331,6 +2367,7 @@ function wigo_ws_View() {
             return;
         selectAllowGeoTracking.setState(settings.bAllowGeoTracking ? 1 : 0);
         numberOffPathThresMeters.setSelected(settings.mOffPathThres.toFixed(0));
+        numberOffPathUpdateMeters.setSelected(settings.mOffPathUpdate.toFixed(0)); ////20161119 added
         numberGeoTrackingSecs.setSelected(settings.secsGeoTrackingInterval.toFixed(0));
 
         selectEnableGeoTracking.setState(settings.bEnableGeoTracking ? 1 : 0);
@@ -2380,6 +2417,7 @@ function wigo_ws_View() {
             pebbleMsg.StartApp();
 
         trackTimer.dCloseToPathThres = settings.mOffPathThres;
+        trackTimer.dOffPathUpdate = settings.mOffPathUpdate;    ////20161119 added
         trackTimer.setIntervalSecs(settings.secsGeoTrackingInterval);
         // Clear or start the trackTimer running.
         trackTimer.bOn = IsGeoTrackValueOn();
@@ -2566,6 +2604,10 @@ function wigo_ws_View() {
         // If distance from geolocation to nearest point on the path
         // is > dCloseToPathThres, then geo location is off-path.
         this.dCloseToPathThres = -1;
+
+        // Distance in meters traveling from previous tracking geolocation 
+        //  when off trail before issuing an alert again. 
+        this.dOffPathUpdate = 50; 
 
         // Sets period of timer interval.
         // Arg:
@@ -2822,7 +2864,8 @@ function wigo_ws_View() {
             var bYes = false;
             if (curMapUpdateLocation) {
                 var distance = curMapUpdateLocation.distanceTo(nextMapUpdateLocation)
-                bYes = distance > minMapUpdateDistance;
+                ////20161119 bYes = distance > minMapUpdateDistance;
+                bYes = distance > that.dOffPathUpdate;
             } else {
                 bYes = true;
             }
@@ -3062,6 +3105,7 @@ function wigo_ws_View() {
 
         // ** Private members
         function DoNotify () {
+            /* ////20161119 redo
             if (cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
                 cordova.plugins.notification.local.schedule({
                     id: 1, // Use same id replacing any previous notification.
@@ -3071,6 +3115,20 @@ function wigo_ws_View() {
                     ////20161115 firstAt: next_monday,
                     ////20161115 data: { key:'value' }
                 });           
+            }
+            */
+
+            var schedule = {
+                    id: 1, // Use same id replacing any previous notification.
+                    text: FormNotifyText(),
+                    //sound: window.app.deviceDetails.isAndroid() ? 'file://sound.mp3' : 'file://beep.caf'
+                    ////20161115 every: 'day',
+                    ////20161115 firstAt: next_monday,
+                    ////20161115 data: { key:'value' }
+                };
+
+            if (cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+                cordova.plugins.notification.local.schedule(schedule);           
             }
         }
 
