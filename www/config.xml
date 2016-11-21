@@ -68,8 +68,10 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
         --> 
-
+        
+        <!////20161121 waketimer not used because cannot get app to run in background 
         <plugin spec="https://github.com/wnyc/cordova-plugin-wakeuptimer.git#1.0.1" source="git"/>
+        -->
         
         <plugin name="cordova-plugin-local-notifications-mm" source="npm" spec="1.0.5" />
 
