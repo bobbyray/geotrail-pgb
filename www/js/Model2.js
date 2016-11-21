@@ -495,7 +495,7 @@ function wigo_ws_Model() {
                     settings.bCompassHeadingVisible = true; 
                 // **
                 //20161119 added member settings.mOffPathUpdate
-                if (!settings.mOffPathUpdate)
+                if (typeof(settings.mOffPathUpdate) === 'undefined')
                     settings.mOffPathUpdate = 50; // Default if not already defined.
             }
             return settings;
