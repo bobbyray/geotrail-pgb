@@ -69,7 +69,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         </gap:plugin>
         --> 
         
-        <!////20161121 waketimer not used because cannot get app to run in background 
+        <!-- ////20161121 waketimer not used because cannot get app to run in background 
         <plugin spec="https://github.com/wnyc/cordova-plugin-wakeuptimer.git#1.0.1" source="git"/>
         -->
         
