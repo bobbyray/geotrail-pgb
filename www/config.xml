@@ -7,7 +7,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
 <widget id="ws.wigo.geotrail" 
     version="1.1.021" xmlns="http://www.w3.org/ns/widgets" 
     xmlns:cdv="http://cordova.apache.org/ns/1.0"   
-    xmlns:gap="http://phonegap.com/ns/1.0" >  <!-- ////20161118 gt was on line above -->
+    xmlns:gap="http://phonegap.com/ns/1.0" > 
     <name>GeoTrail</name>
     <description>
         A Cordova application for viewing trail map online or offline.
@@ -41,8 +41,6 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <plugin name="cordova-plugin-file" source="pgb" spec="2.0.0" /> 
         --> 
         <plugin name="cordova-plugin-file-transfer" source="npm" spec="1.1.0" /> 
-        <!-- ////20161112 <plugin name="cordova-plugin-geolocation" source="npm" spec="1.0.0" />  -->
-        <!-- ////20161213DidNotWork <plugin name="cordova-plugin-geolocation-ios9-fix" source="npm" /> -->
         <plugin name="cordova-plugin-geolocation" source="npm" spec="2.4.0" />
 
         <plugin name="cordova-plugin-vibration" source="npm" spec="1.2.0" /> 
@@ -69,13 +67,15 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         </gap:plugin>
         --> 
         
-        <!-- ////20161121 waketimer not used because cannot get app to run in background 
+        <!-- //20161121 waketimer not used because cannot get app to run in background 
         <plugin spec="https://github.com/wnyc/cordova-plugin-wakeuptimer.git#1.0.1" source="git"/>
         -->
         
+        <!-- //20161203 Comment out. local notification only working when phone call is interrupted, NOT when app is in background.
         <plugin name="cordova-plugin-local-notifications-mm" source="npm" spec="1.0.5" />
+        -->
 
-        <!-- ////20161121 Do NOT think this allows tracking in background 
+        <!-- //20161121 Comment out. Do NOT think this allows tracking in background 
         <gap:config-file platform="ios" parent="UIBackgroundModes" overwrite="true"> 
             <array> <string>location</string> </array> 
         </gap:config-file>    
