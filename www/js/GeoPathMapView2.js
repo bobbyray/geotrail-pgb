@@ -77,16 +77,18 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
     // A color value is a string for a color. 
     // The rbg hex notation of '#rrggbb' can be used (rr for red, gg for green, bb for blue).
     this.color = {
-        path: 'red',
-        locCircle: '#00ff00',  // Current geo location.
-        toPath: '#0000ff',     // Line back to path.
-        prevLocCircle: '#00ffff',  // Previous location circle
-        refLine: '#000000',        // Ref line from current location to previous location.
+        path: '#331a00',        // dark broun //was '#ff8c1a', //was '#663300', //was #b36b00'  //was brown to sandy  
+        pathStart: '#00FF00',   // bright green
+        pathEnd:    '#ff0000',  // bright red
+        locCircle: '#00ff00',   // Current geo location, bright green.
+        toPath: '#0000ff',      // Line back to path, bright blue.
+        prevLocCircle: '#00ffff',  // Previous location circle, cyan
+        refLine: '#000000',        // Ref line from current location to previous location, black.
         touchCircle: 'orange',     // Touch point when editing path.
         editCircle: 'yellow',      // Edit point on path.
         editSegment: 'magenta',    // Edit line segment for path.
         eraseSegment: 'white',     // Erase line segment when editing a point in the path.
-        compassHeadingArrow: 'yellow' // Compass heading arrow from current location circle.
+        compassHeadingArrow: 'yellow', // Compass heading arrow from current location circle.
     };
 
     // Initialize to use Open Streets Map once browser has initialized.
@@ -142,7 +144,7 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
     var curPathSegs = new PathSegs(); 
 
     var curPath = null; // Ref to current path drawn, a wigo_ws_GpxPath object.
-    // Draws geo path on the Google map object.
+    // Draws geo path on the map object.
     // Args:
     //  path: wigo_ws_GpxPath object for the path.
     this.DrawPath = function (path) {
@@ -161,8 +163,9 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
         curPathSegs.Init(path);
         var pathCoords = curPathSegs.getPathCoords();
 
-        mapPath = L.polyline(pathCoords, { color: this.color.path, opacity: 1.0 });
+        mapPath = L.polyline(pathCoords, { color: this.color.path, opacity: 0.5 });
         mapPath.addTo(map);
+
         // Set zoom so that trail fits if there is valid boundary.
         if (IsBoundaryValid(path)) { 
             var sw = L.latLng(path.gptSW.lat, path.gptSW.lon);
@@ -179,6 +182,9 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
         }
         // Save zoom value to restore by this.PanToPathCenter().
         zoomPathBounds = map.getZoom();
+
+        // Draw start and end of path shape on the path.
+        SetStartEndOfPathShape();  
 
         curPath = path; // Save current gpx path object.
         this.PanToPathCenter();
@@ -505,6 +511,8 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
         zoomPathBounds = null; 
         curPath = null;
         curPathSegs.Clear(); 
+        ClearStartOfPathShape(); 
+        ClearEndOfPathShape();   
         ClearGeoLocationCircle();
         ClearGeoLocationToPathArrow();
         ClearPrevGeoLocRefLine();
@@ -751,6 +759,11 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
             return pathCoords.length;
         };
 
+        // Returns numbers segnment is path.
+        this.getSegCount = function() {   
+            return pathCoords.length-1; 
+        }
+
         // Returns true stepping thru all segments of array has been completed.
         this.IsCycleDone = function () {
             var bDone = iCurIx === iOrgIx;
@@ -875,6 +888,119 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
         var bYes = map != null;
         return bYes;
     }
+
+    
+    var startOfPathShape = null; // L.Polygon for shape for the start of a path. 
+    // Clears from map the start of path shape.
+    function ClearStartOfPathShape() {
+        if (startOfPathShape)
+            map.removeLayer(startOfPathShape);
+    }
+
+    var endOfPathShape = null;
+    // Clears from map the end of path shape.
+    function ClearEndOfPathShape() {
+        if (endOfPathShape)
+            map.removeLayer(endOfPathShape);
+    }
+
+
+    // Set (draws) shape for start of path beginning of first segment of the path
+    // given by curPathSegs var.
+    // Remarks:
+    // At first tried to draw a triangle for start of trail and a square for end trail using
+    // leaflet polygon, but this has problems with scaling because triangle could be way too
+    // large for a trail with a small zoom factor. The solution is to draw a partial line segment 
+    // overlaying the first and last segment (each a different color) of the trail.  
+    function SetStartEndOfPathShape() {
+
+        // Helper that calculates and returns array of LatLng objects for line that is a part of a segment.
+        // Returns: array of LatLng obj, [llFrom, llTo] where llFrom is llStart, and llTo is end for the part of segment.
+        // Args:
+        //  llStart: LatLng obj for start of segment.
+        //  llEnd: LatLng obj for end of segment.
+        //  fraction: number, optional. portion of segment from llStart to llEnd. If undefined, 
+        //            llStart to llEnd is returned.
+        function CalcAlongSeg(llStart, llEnd, fraction) {
+            var arSeg = [];
+            if (typeof(fraction) === 'undefined') {
+                arSeg.push(llStart);
+                arSeg.push(llEnd);
+            } else {
+                var llDelta = L.latLng(llEnd.lat - llStart.lat, llEnd.lng - llStart.lng);
+                llDelta.lat = fraction * llDelta.lat;
+                llDelta.lng = fraction * llDelta.lng;
+                var llEndPart = L.latLng(llStart.lat + llDelta.lat, llStart.lng + llDelta.lng);
+                arSeg.push(llStart);
+                arSeg.push(llEndPart);
+            }
+            return arSeg;
+        }
+
+        
+        // Helper that calculates a portion of first line segment.
+        // Returns: array of LatLng obj, [llFrom, llTo] where llFrom is llStart of first segment, and 
+        //          llTo is end for the part of first segment.
+        //  Arg:
+        //  mMaxLen: number. maximum number of meters for part returns. if mMaxLen > len of first segment, 
+        //           returns part as complete first segment.
+        function CalcStartOfPathLine(mMaxLen) {
+            var arPart;
+            if (curPathSegs.getSegCount() > 0) {
+                var seg = curPathSegs.GetSegRef(0);
+                if (seg.len > mMaxLen)
+                    arPart = CalcAlongSeg(seg.llStart, seg.llEnd, mMaxLen / seg.len);
+                else
+                    arPart = CalcAlongSeg(seg.llStart, seg.llEnd);
+            } else {
+                arPart = null;
+            }
+            return arPart
+        }
+
+
+        // Helper that calculates a portion of last line segment.
+        // Returns: array of LatLng obj, [llFrom, llTo] where llFrom is llEnd of last segment, and 
+        //          llTo is end for the part of last segment.
+        //  Arg:
+        //  mMaxLen: number. maximum number of meters for part returned. if mMaxLen > len of last segment, 
+        //           returns part as complete last segment.
+        function CalcEndOfPathLine(mMaxLen) {
+            var arPart;
+            var segCount = curPathSegs.getSegCount(); 
+            if (segCount > 0) {
+                var seg = curPathSegs.GetSegRef(segCount-1);
+                if (seg.len > mMaxLen)
+                    arPart = CalcAlongSeg(seg.llEnd, seg.llStart, mMaxLen / seg.len);
+                else
+                    arPart = CalcAlongSeg(seg.llEnd, seg.llStart);
+            } else {
+                arPart = null;
+            }
+            return arPart
+        }
+
+
+        // Draw start segment shape.
+        var shapeOptions = {
+            color: that.color.pathStart,  // stroke (perimeter) color
+            weight: 6,    // stroke width in pels for line.
+            opacity: 1.0
+        };
+        var arLatLng = CalcStartOfPathLine(30);  
+        if (arLatLng) {
+            startOfPathShape = L.polyline(arLatLng, shapeOptions); // first segment of line in different color.
+            startOfPathShape.addTo(map);
+        }
+        // Draw end segment shape.
+        shapeOptions.color = that.color.pathEnd;
+        arLatLng = CalcEndOfPathLine(30);   
+        if (arLatLng) {
+            endOfPathShape = L.polyline(arLatLng, shapeOptions); // last segment of line in different color.
+            endOfPathShape.addTo(map);
+        }        
+    }
+    
 
     // Clears from map the geo location circle.
     function ClearGeoLocationCircle() {
@@ -1014,10 +1140,10 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
         function CalcArrowTip(llArrowBase, degPhi, pelsR) {
             // Get map screen point for base of arrow at current geo location circle.
             var ptArrowBase =  map.latLngToLayerPoint(llArrowBase);
-            // Calculate point in pixels on the map for tip from degHeading.
-            // Note: angle for rt triangle for x, y is 90 degree - degHeading.
+            // Calculate point in pixels on the map for tip from degPhi.
+            // Note: angle for rt triangle for x, y is 90 degree - degPhi.
             //       So use sin() to calc x, and cos() to calc y. 
-            // Note: degTheata = 90.0 - degPhi, angle for std trig unit circle.
+            // Note: degTheta = 90.0 - degPhi, angle for std trig unit circle.
             //       yMap = -YTrig, Y axis on map is negative yTrig axis. 
             var theta = (90.0 - degPhi) * L.LatLng.DEG_TO_RAD;
             var x = pelsR * Math.cos(theta);
@@ -1029,7 +1155,7 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
         }
         
         
-        // Calcuates are returns array of LatLng objs for points in a polygon for the arrow.
+        // Calcuates and returns array of LatLng objs for points in a polygon for the arrow.
         function CalcArrowPolygon() {
             if (! geolocCircle) 
                 return null;
@@ -1053,7 +1179,7 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
             color: that.color.compassHeadingArrow,
             fill: true,
             fillOpacity: 1.0
-        }
+        };
         var arLatLng = CalcArrowPolygon();
         if (arLatLng) {
             compassHeadingArrow = L.polygon(arLatLng, arrowOptions);
@@ -1120,7 +1246,6 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
         touchCircle = L.circle(latlng, r, circleOptions);
         touchCircle.addTo(map);
     }
-
 
     var editSegment = null; // L.PolyLine object for edit segment overlay.
 
