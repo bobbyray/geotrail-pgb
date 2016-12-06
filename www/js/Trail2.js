@@ -752,7 +752,7 @@ function wigo_ws_View() {
             ShowSettingsDiv(false);
             that.ClearStatus();
             var settings = GetSettingsValues();
-            SetSettingsParams(settings);
+            SetSettingsParams(settings, false); // false => not initially setting when app is loaded. 
             that.onSaveSettings(settings);
             titleBar.scrollIntoView();   
         }
@@ -2110,9 +2110,7 @@ function wigo_ws_View() {
         }
     } 
 
-    
-    var holderEnableGeoTracking = document.getElementById('holderEnableGeoTracking');
-    var selectEnableGeoTracking = ctrls.NewYesNoControl(holderEnableGeoTracking, null, 'Geo Tracking Initially On', -1);
+    // Note 20161205: selectEnableGeoTracking control no longer exists.
 
     var holderGeoTrackingSecs = document.getElementById('holderGeoTrackingSecs');
     var numberGeoTrackingSecs = new ctrls.DropDownControl(holderGeoTrackingSecs, null, 'Geo Tracking Interval', '', 'img/ws.wigo.dropdownhorizontalicon.png');
@@ -2351,8 +2349,8 @@ function wigo_ws_View() {
         if (!IsSelectCtrlOk2(numberGeoTrackingSecs))
             return false;
 
-        if (!IsYesNoCtrlOk(selectEnableGeoTracking)) 
-            return false;
+        // Note 20161205: selectEnableGeoTracking no longer exits.
+
         if (!IsYesNoCtrlOk(selectOffPathAlert))  
             return false;
         if (!IsYesNoCtrlOk(selectPhoneAlert)) 
@@ -2401,7 +2399,7 @@ function wigo_ws_View() {
         settings.mOffPathUpdate = parseFloat(numberOffPathUpdateMeters.getSelectedValue());   
         settings.distanceUnits = distanceUnits.getSelectedValue();   
         settings.secsGeoTrackingInterval = parseFloat(numberGeoTrackingSecs.getSelectedValue());
-        settings.bEnableGeoTracking = selectEnableGeoTracking.getState() === 1;
+        // Note 20161205: settings.bEnableGeoTracking, which used to indicate Track On initially, is no longer used.
         settings.bOffPathAlert = selectOffPathAlert.getState() === 1;
         settings.bPhoneAlert = selectPhoneAlert.getState() === 1;
         settings.secsPhoneVibe = parseFloat(numberPhoneVibeSecs.getSelectedValue());
@@ -2438,8 +2436,7 @@ function wigo_ws_View() {
         numberGeoTrackingSecs.setSelected(settings.secsGeoTrackingInterval.toFixed(0));
         // Show or hide numberOffPathUpdateMeters and numberGeoTrackingSecs depending on selection for selectAllowGeoTracking.
         ShowOrHideDependenciesForAllowGeoTrackingItem(allowGeoTrackingValue); 
-
-        selectEnableGeoTracking.setState(settings.bEnableGeoTracking ? 1 : 0);
+        // Note: settings.bEnableGeoTracking, which used to indicate Track On initially, is no longer used.
         selectOffPathAlert.setState(settings.bOffPathAlert ? 1 : 0);
         selectPhoneAlert.setState(settings.bPhoneAlert ? 1 : 0);
         numberPhoneVibeSecs.setSelected(settings.secsPhoneVibe.toFixed(1));
@@ -2456,8 +2453,13 @@ function wigo_ws_View() {
     }
 
     // Sets parameters in other member vars/objects based on settings.
-    function SetSettingsParams(settings) {
-        EnableMapBarGeoTrackingOptions(settings); 
+    // Args:
+    //  settings: wigo_ws_GeoTrailSettings object. 
+    //  bInitial: boolean, optional. true for initially setting when app is loaded. Defaults to true.
+    function SetSettingsParams(settings, bInitial) {
+        if (typeof(bInitial) !== 'boolean')
+            bInitial = true;
+        EnableMapBarGeoTrackingOptions(settings, bInitial); 
         // Clear tracking timer if it not on to ensure it is stopped.
         map.bIgnoreMapClick = !settings.bClickForGeoLoc;
         map.dPrevGeoLocThres = settings.dPrevGeoLocThres;
@@ -2480,7 +2482,15 @@ function wigo_ws_View() {
         // Enable using Pebble and allowing vibration.
         pebbleMsg.Enable(settings.bPebbleAlert); // Enable using pebble.
         pebbleMsg.countVibe = settings.countPebbleVibe;
-        pebbleMsg.SetTimeOut(settings.secsGeoTrackingInterval);
+        
+        // For period tracking given by time interval, set pebble message timeout to the time interval.
+        // For continuous trracking, set pebble messaage timeout to 0, which means there is no timeout
+        // check by pebble for the next message.
+        if (settings.bUseWatchPositionForTracking) 
+            pebbleMsg.ClearTimeOut();  // Continuous tracking
+        else 
+            pebbleMsg.SetTimeOut(settings.secsGeoTrackingInterval); // Periodic tracking
+
         // Start Pebble app if it is enabled.
         if (settings.bPebbleAlert)
             pebbleMsg.StartApp();
@@ -3292,6 +3302,12 @@ function wigo_ws_View() {
             pebble.secsTimeOut = secsTrackingPeriod + 10.0;
         }
 
+        
+        // Clear time out used when tracking.
+        this.ClearTimeOut = function() { 
+            pebble.secsTimeOut = 0.0;
+        }
+
         // Starts the Pebble app.
         // Shows an alert on failure.
         this.StartApp = function () {
@@ -3722,24 +3738,21 @@ function wigo_ws_View() {
         that.ClearStatus();
         // Always hide sign-in bar when path is selected to conserve screen space.
         ShowOwnerIdDiv(false); 
+        // Ensure tracking is off and do not show compass for current geolocation
+        // because the compass arrow may be way out of scale. It seems the compass
+        // must be drawn after this thread has ocmpleted in order for scaling to be 
+        // correct for the drawing polygons on the map.
+        // Also, it makes sense to ensure tracking is off when selecting a different trail.
+        pebbleMsg.Send("GeoTrail", false, false); // Clear pebble message, no vibration, no timeout.
+        mapTrackingCtrl.setState(0);
+        trackTimer.ClearTimer();
+        that.ShowStatus("Geo tracking off.", false); // false => not an error.
         if (listIx < 0) {   
             // No path selected.
             map.ClearPath();
         } else {
             // Path is selected
             that.onPathSelected(that.curMode(), listIx);
-            // Update status for track timer unless editing.
-            if (that.curMode() === that.eMode.online_view ||
-                that.curMode() === that.eMode.offline) {
-                if (trackTimer.bOn) {
-                    if (map.IsPathDefined()) {
-                        // Tracking timer is on so show current geo location right away.
-                        DoGeoLocation();
-                    }
-                } else {
-                    that.ShowStatus("Geo tracking off.", false); // false => not an error.
-                }
-            }
         }
         titleBar.scrollIntoView();
     };
@@ -3845,17 +3858,20 @@ function wigo_ws_View() {
     // Sets values for the Track and Alert OnOffCtrls on the mapBar.
     // Arg:
     //  settings: wigo_ws_GeoTrailSettings object for user settings (preferences).
-    function EnableMapBarGeoTrackingOptions(settings) {
+    //  bInitial: boolean. true to indicate initial call after app is loaded.
+    function EnableMapBarGeoTrackingOptions(settings, bInitial) {
         var bAllowTracking = settings.bAllowGeoTracking;
-        var bEnableTracking = settings.bEnableGeoTracking;
         var bAllowPhoneAlert = settings.bPhoneAlert;
         var bEnablePhoneAlert = settings.bOffPathAlert; 
         ShowElement(holderMapTrackToggle, bAllowTracking);  
         ShowElement(holderMapPhAlertToggle, bAllowPhoneAlert);  
 
-        var nState = bAllowTracking && bEnableTracking? 1 : 0;
-        mapTrackingCtrl.setState(nState);
-        nState = bAllowPhoneAlert && bEnablePhoneAlert ? 1 : 0;
+        // Set Track control to Off when app is initially loaded.
+        // Otherwise leave of Track control as is.
+        // Note: settings.bEnableGeoTracking, which used to indicate Track On initially, is no longer used.
+        if (bInitial)   ////20161205 Add if condition, then body existed before.
+            mapTrackingCtrl.setState(0);
+        var nState = bAllowPhoneAlert && bEnablePhoneAlert ? 1 : 0;
         mapAlertCtrl.setState(nState);
     }
 
