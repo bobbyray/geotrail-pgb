@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Release buld for Google Play on 09/20/2016 16:03
-    var sVersion = "1.1.021"; // Constant string for App version.
+    var sVersion = "1.1.022_20161210"; // Constant string for App version.
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -4452,6 +4452,24 @@ window.app.deviceDetails = new Wigo_Ws_CordovaDeviceDetails();
 Wigo_Ws_InitDeviceDetails(window.app.deviceDetails);
 
 window.app.OnDocReady = function (e) {
+    //20161210 Initial hockeyapp for distruction of app for ios.
+    if (typeof(hockeyapp) !== 'undefined') {
+        // hockeyapp.start(null, null, "296f229a3907490abd795f3a70760dea");
+        hockeyapp.start(function(){
+            // Success.
+            var sMsg = 'Successfully started HockeyApp.';
+            alert(sMsg);
+            console.log(sMsg);
+        }, 
+        function(){
+            // Failure.
+            var sMsg = 'Failed to initialize HockeyApp!';
+            alert(sMsg);
+            console.log(sMsg);
+        }, 
+        "296f229a3907490abd795f3a70760dea");
+    }
+
     // Create the controller and therefore the view and model therein.
     window.app.ctlr = new wigo_ws_Controller();
 };
