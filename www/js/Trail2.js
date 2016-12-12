@@ -3599,7 +3599,8 @@ function wigo_ws_View() {
                           ['back_to_trail', 'Help - Back To Trail'],              
                           ['battery_drain', 'Help - Tracking vs Battery Drain'],  
                           ['about', 'About'],                                     
-                          ['license', 'Licenses']                                 
+                          ['license', 'Licenses'],
+                          ['crash', 'Crash Test']                       ////20161212 added          
                          ];
         // iPhone. Do not show help features not available on iPhone.
         var noHelp = document.getElementsByClassName("noIosHelp");
@@ -3614,7 +3615,8 @@ function wigo_ws_View() {
                           ['back_to_trail', 'Help - Back To Trail'],              // 4
                           ['battery_drain', 'Help - Tracking vs Battery Drain'],  // 5
                           ['about', 'About'],                                     // 6
-                          ['license', 'Licenses']                                 // 7
+                          ['license', 'Licenses'],                                // 7
+                          ['crash', 'Crash Test']                                 ////20161212 
                          ];
         // Android. Do not show help for info about iPhone that does apply for Android.
         var noHelp = document.getElementsByClassName("noAndroidHelp");
@@ -3657,6 +3659,18 @@ function wigo_ws_View() {
         } else if (dataValue === 'battery_drain') {
             ShowHelpTrackingVsBattery(true);
             this.selectedIndex = 0;
+        } else if (dataValue === 'crash') {
+            ConfirmYesNo("Is it ok to CRASH and end this app in order to test generating a crash report? ", 
+            function(bYes) {
+                if (bYes) {
+                    if (typeof(hockeyapp) !== 'undefined') {
+                        hockeyapp.forceCrash();
+                    }
+                } else {
+                    AlertMsg("OK, no crash -- continuing as usual.");
+                }
+            })
+
         }
         that.ClearStatus();
     };
@@ -4469,9 +4483,10 @@ window.app.OnDocReady = function (e) {
         }, 
         "296f229a3907490abd795f3a70760dea",
         true); // true => autoSend crash report if one exists on start.
-    } else {
-        alert("HockeyApp Plugin is undefined");
-    }
+    } 
+    ////20161212 else {
+    ////20161212     alert("HockeyApp Plugin is undefined");
+    ////20161212 }
 
     // Create the controller and therefore the view and model therein.
     window.app.ctlr = new wigo_ws_Controller();
