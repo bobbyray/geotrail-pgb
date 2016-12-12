@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Release buld for Google Play on 09/20/2016 16:03
-    var sVersion = "1.1.022_20161210"; // Constant string for App version.
+    var sVersion = "1.1.022_20161212"; // Constant string for App version.
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -3600,7 +3600,7 @@ function wigo_ws_View() {
                           ['battery_drain', 'Help - Tracking vs Battery Drain'],  
                           ['about', 'About'],                                     
                           ['license', 'Licenses'],
-                          ['crash', 'Crash Test']                       ////20161212 added          
+                          ['crash', 'Crash Test']                          
                          ];
         // iPhone. Do not show help features not available on iPhone.
         var noHelp = document.getElementsByClassName("noIosHelp");
@@ -3616,7 +3616,7 @@ function wigo_ws_View() {
                           ['battery_drain', 'Help - Tracking vs Battery Drain'],  // 5
                           ['about', 'About'],                                     // 6
                           ['license', 'Licenses'],                                // 7
-                          ['crash', 'Crash Test']                                 ////20161212 
+                          ['crash', 'Crash Test']                                 //20161212???? Probably want to remove for Android. 
                          ];
         // Android. Do not show help for info about iPhone that does apply for Android.
         var noHelp = document.getElementsByClassName("noAndroidHelp");
@@ -3665,7 +3665,6 @@ function wigo_ws_View() {
                 if (bYes) {
                     if (typeof(hockeyapp) !== 'undefined') {
                         hockeyapp.forceCrash();
-                        ////20161212 AlertMsg("Forced CRASH!");
                     }
                 } else {
                     AlertMsg("OK, no crash -- continuing as usual.");
@@ -4485,9 +4484,6 @@ window.app.OnDocReady = function (e) {
         "296f229a3907490abd795f3a70760dea",
         true); // true => autoSend crash report if one exists on start.
     } 
-    ////20161212 else {
-    ////20161212     alert("HockeyApp Plugin is undefined");
-    ////20161212 }
 
     // Create the controller and therefore the view and model therein.
     window.app.ctlr = new wigo_ws_Controller();
