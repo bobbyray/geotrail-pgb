@@ -4467,7 +4467,10 @@ window.app.OnDocReady = function (e) {
             alert(sMsg);
             console.log(sMsg);
         }, 
-        "296f229a3907490abd795f3a70760dea");
+        "296f229a3907490abd795f3a70760dea",
+        true); // true => autoSend crash report if one exists on start.
+    } else {
+        alert("HockeyApp Plugin is undefined");
     }
 
     // Create the controller and therefore the view and model therein.
