@@ -3665,6 +3665,7 @@ function wigo_ws_View() {
                 if (bYes) {
                     if (typeof(hockeyapp) !== 'undefined') {
                         hockeyapp.forceCrash();
+                        AlertMsg("Forced CRASH!");
                     }
                 } else {
                     AlertMsg("OK, no crash -- continuing as usual.");
