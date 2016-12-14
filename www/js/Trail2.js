@@ -42,7 +42,8 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Release buld for Google Play on 09/20/2016 16:03
-    var sVersion = "1.1.022_20161213"; // Constant string for App version.
+    var sVersion = "1.1.022_20161214"; // Constant string for App version.
+
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -3600,7 +3601,8 @@ function wigo_ws_View() {
                           ['battery_drain', 'Help - Tracking vs Battery Drain'],  
                           ['about', 'About'],                                     
                           ['license', 'Licenses'],
-                          ['crash', 'Crash Test']                          
+                          ['screenshot', 'Screen Shot Report'],                        
+                          ['crash', 'Crash Test']
                          ];
         // iPhone. Do not show help features not available on iPhone.
         var noHelp = document.getElementsByClassName("noIosHelp");
@@ -3616,7 +3618,8 @@ function wigo_ws_View() {
                           ['battery_drain', 'Help - Tracking vs Battery Drain'],  // 5
                           ['about', 'About'],                                     // 6
                           ['license', 'Licenses'],                                // 7
-                          ['crash', 'Crash Test']                                 //20161212???? Probably want to remove for Android. 
+                          ['screenshot', 'Screen Shot Report'],                   //20161212???? Probably want to remove for Android.      
+                          ['crash', 'Crash Test']                                 //20161212???? Probably want to remove for Android.
                          ];
         // Android. Do not show help for info about iPhone that does apply for Android.
         var noHelp = document.getElementsByClassName("noAndroidHelp");
@@ -3664,6 +3667,7 @@ function wigo_ws_View() {
             function(bYes) {
                 if (bYes) {
                     if (typeof(hockeyapp) !== 'undefined') {
+                        hockeyapp.addMetaData(null, null, {CrashTest: 'Testing forced crash.'});
                         hockeyapp.forceCrash();
                     }
                 } else {
@@ -3671,6 +3675,26 @@ function wigo_ws_View() {
                 }
             })
 
+        } else if (dataValue === 'screenshot') {
+            ConfirmYesNo("Is it ok to send a screen shot to report a problem?", 
+            function(bYes) {
+                if (bYes) {
+                    if (typeof(hockeyapp) !== 'undefined') {
+                        hockeyapp.composeFeedback(function(){
+                            // Success.
+                            AlertMsg('A screen shot has been sent.');
+                        }, 
+                        function(){
+                            // Error.
+                            AlertMsg('Failed to send screen shot!');
+                        }, 
+                        true, 
+                        {ScreenShot: 'Screen Shot'});
+                    }
+                } else {
+                    AlertMsg("No screen shot sent.");
+                }
+            });
         }
         that.ClearStatus();
     };
@@ -4477,19 +4501,19 @@ document.addEventListener("deviceready", function() {
         hockeyapp.start(function(){
             // Success.
             var sMsg = 'Successfully started HockeyApp.';
-            alert(sMsg);
+            //debug alert(sMsg);
             console.log(sMsg);
         }, 
         function(){
             // Failure.
             var sMsg = 'Failed to initialize HockeyApp!';
-            alert(sMsg);
+            //debug alert(sMsg);
             console.log(sMsg);
         }, 
         "296f229a3907490abd795f3a70760dea",
         true); // true => autoSend crash report if one exists on start.
     } else {
-        alert('Device is ready.');
+        //debug alert('Device is ready.');
         console.log('Device is ready.');
     }
 }, 
