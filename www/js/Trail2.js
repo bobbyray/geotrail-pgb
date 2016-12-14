@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Release buld for Google Play on 09/20/2016 16:03
-    var sVersion = "1.1.022_20161212"; // Constant string for App version.
+    var sVersion = "1.1.022_20161213"; // Constant string for App version.
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -4465,8 +4465,13 @@ window.app = {};
 window.app.deviceDetails = new Wigo_Ws_CordovaDeviceDetails();  
 Wigo_Ws_InitDeviceDetails(window.app.deviceDetails);
 
-window.app.OnDocReady = function (e) {
-    //20161210 Initial hockeyapp for distruction of app for ios.
+
+// Windows.app.OnDocReady() handler was not initializing HockeyApp for reporting.
+// Try deviceready() handler instead.
+// Note: It seems HockeyApp works for distribution even if Cordova plugin 
+// for hockeyapp is not used. 
+document.addEventListener("deviceready", function() {
+    //20161210 Initialize hockeyapp for distruction of app for ios.
     if (typeof(hockeyapp) !== 'undefined') {
         // hockeyapp.start(null, null, "296f229a3907490abd795f3a70760dea");
         hockeyapp.start(function(){
@@ -4483,8 +4488,16 @@ window.app.OnDocReady = function (e) {
         }, 
         "296f229a3907490abd795f3a70760dea",
         true); // true => autoSend crash report if one exists on start.
-    } 
+    } else {
+        alert('Device is ready.');
+        console.log('Device is ready.');
+    }
+}, 
+false);
 
+
+
+window.app.OnDocReady = function (e) {
     // Create the controller and therefore the view and model therein.
     window.app.ctlr = new wigo_ws_Controller();
 };
