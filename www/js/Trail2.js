@@ -42,8 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Release buld for Google Play on 09/20/2016 16:03
-    var sVersion = "1.1.022_20161214"; // Constant string for App version.
-
+    var sVersion = "1.1.022_20161215"; // Constant string for App version.
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -3601,7 +3600,7 @@ function wigo_ws_View() {
                           ['battery_drain', 'Help - Tracking vs Battery Drain'],  
                           ['about', 'About'],                                     
                           ['license', 'Licenses'],
-                          ['screenshot', 'Screen Shot Report'],                        
+                          // ['screenshot', 'Screen Shot Report'],  //20161215 Not working in hockepapp plugin for ios.                         
                           ['crash', 'Crash Test']
                          ];
         // iPhone. Do not show help features not available on iPhone.
@@ -3618,8 +3617,8 @@ function wigo_ws_View() {
                           ['battery_drain', 'Help - Tracking vs Battery Drain'],  // 5
                           ['about', 'About'],                                     // 6
                           ['license', 'Licenses'],                                // 7
-                          ['screenshot', 'Screen Shot Report'],                   //20161212???? Probably want to remove for Android.      
-                          ['crash', 'Crash Test']                                 //20161212???? Probably want to remove for Android.
+                          // ['screenshot', 'Screen Shot Report'],                //20161215 Not available for Android.      
+                          // ['crash', 'Crash Test']                              //20161215 Not available for Android.
                          ];
         // Android. Do not show help for info about iPhone that does apply for Android.
         var noHelp = document.getElementsByClassName("noAndroidHelp");
@@ -3680,7 +3679,8 @@ function wigo_ws_View() {
             function(bYes) {
                 if (bYes) {
                     if (typeof(hockeyapp) !== 'undefined') {
-                        /* ////20161214 
+                        /* //20161214 Does not work currently. Maybe some day plugin will be fixed.
+                           //         Disable by removing Crash Test item for mainMenu. 
                         hockeyapp.composeFeedback(function(){
                             // Success.
                             AlertMsg('A screen shot has been sent.');
@@ -3692,7 +3692,7 @@ function wigo_ws_View() {
                         true, 
                         {ScreenShot: 'Screen Shot'});
                         */
-                        hockeyapp.feedback();
+                        // hockeyapp.feedback(); // Does not take screen shot. Kind of works, but crashes if user selects Add Image.
                     }
                 } else {
                     AlertMsg("No screen shot sent.");
