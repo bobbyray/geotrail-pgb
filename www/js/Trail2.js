@@ -3680,6 +3680,7 @@ function wigo_ws_View() {
             function(bYes) {
                 if (bYes) {
                     if (typeof(hockeyapp) !== 'undefined') {
+                        /* ////20161214 
                         hockeyapp.composeFeedback(function(){
                             // Success.
                             AlertMsg('A screen shot has been sent.');
@@ -3690,6 +3691,8 @@ function wigo_ws_View() {
                         }, 
                         true, 
                         {ScreenShot: 'Screen Shot'});
+                        */
+                        hockeyapp.feedback();
                     }
                 } else {
                     AlertMsg("No screen shot sent.");
