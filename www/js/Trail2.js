@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Release buld for Google Play on 09/20/2016 16:03
-    var sVersion = "1.1.022_20161218"; // Constant string for App version.
+    var sVersion = "1.1.022_20170113"; // Constant string for App version.
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -60,7 +60,7 @@ function wigo_ws_View() {
     // User selected a geo path from the list of paths.
     // Handler Signature:
     //  nMode: byte value of this.eMode enumeration.
-    //  nIx: integer for selection in the list. 
+    //  nIx: integer for data index from item in selection list control. 
     this.onPathSelected = function (nMode, nIx) { };
 
     // User request saving selected geo path in list of geo paths offline.
@@ -75,7 +75,6 @@ function wigo_ws_View() {
     //  nMode: byte value of this.eMode enumeration.
     //  sPathOwnerId: string for path owner id for getting the paths from server.
     this.onGetPaths = function (nMode, sPathOwnerId) { };
-
 
     // Enumeration for values of selectFind control.
     this.eFindIx = {find: 0, home_area: 1, on_screen: 2, all_public: 3, all_mine: 4, my_public: 5, my_private: 6,
@@ -97,16 +96,30 @@ function wigo_ws_View() {
     //  gptNE: wigo_ws_GeoPt for NorthEast corner of rectangle. If null, do not find by lat/lon.
     this.onFindPaths = function (sOwnerId, nFindIx, gptSW, gptNE) { };
 
-    // Upload to server a path given by a list GeoPt elements.
-    // Handler Signature:
+
+    // Returns geo path upload data for data index from item in the selection list.
+    // Handler signature:
     //  nMode: byte value of this.eMode enumeration.
-    //  path: {nId: int, sPathName: string, sOwnerId: string, sShare: int, arGeoPt: array}
+    //  nIx: integer for data index from item in selection list control. 
+    //  Returned object: defined by this.NewUploadPathObj().
+    //                   null if nIx is out of range.
+    // Note: the return is synchronous.
+    this.onGetUploadPath = function (nMode, nIx) {return null};  
+
+    //  Creates and returns {nId: int, sPathName: string, sOwnerId: string, sShare: int, arGeoPt: array}:
     //      nId: integer for path record id. 0 indicates new path.
     //      sPathName: string for name of path.
     //      sOwnerId: string for owner id of path.
     //      sShare: string for share value, public or private. 
     //              Note: Matches name of wigo_ws_GeoPathsRESTfulApi.eShare property.
     //      arGeoPt:array of wigo_ws_GeoPt elements defining the path.
+    // NOTE: this is NOT an event fired by the view, rather an object to be filled in.
+    this.NewUploadPathObj = function() { return NewUploadPathObj();};  
+
+    // Upload to server a path given by a list GeoPt elements.
+    // Handler Signature:
+    //  nMode: byte value of this.eMode enumeration.
+    //  path: Obj created by this.NewUploadPathObj(), see above.
     this.onUpload = function (nMode, path) { };
 
     // Delete at server a path record by gpxId.
@@ -370,7 +383,6 @@ function wigo_ws_View() {
                 ShowElement(onlineOfflineEditBar, false);
                 ShowElement(onlineAction, false);
                 ShowElement(offlineAction, false);
-                ShowElement(pathDescrBar, false);
                 ShowElement(mapBar, false);
                 ShowOwnerIdDiv(false);
                 ShowPathInfoDiv(false);  
@@ -398,6 +410,7 @@ function wigo_ws_View() {
                 map.ClearPath();
                 selectGeoTrail.clearValueDisplay(); 
                 this.onGetPaths(nMode, that.getOwnerId()); 
+                recordFSM.initialize(onlineRecord);  
                 break;
             case this.eMode.offline:
                 selectOnceAfterSetPathList.nPrevMode = nPrevMode;                         
@@ -424,6 +437,7 @@ function wigo_ws_View() {
                         }
                     },"",sAnswerBtns);
                 }
+                recordFSM.initialize(offlineRecord);  
                 break;
             case this.eMode.online_edit:
                 selectOnceAfterSetPathList.nPrevMode = nPrevMode;                         
@@ -540,6 +554,23 @@ function wigo_ws_View() {
         }
     };
 
+    // Indicates that uploading a path has completed.
+    // Args:
+    //  nMode: enumeration value of this.eMode(). Mode for the uplooad.
+    //  bOk: boolean. true for upload successful.
+    //  sStatusMsg: string. status msg to show.
+    //  nId: number. record id at server for uploated path.
+    this.uploadPathCompleted = function(nMode, bOk, sStatusMsg, nId) {
+        if (nMode === this.eMode.online_view) {
+            this.ShowStatus(sStatusMsg, !bOk);
+            recordFSM.uploadPathCompleted(bOk, nId); 
+        } else if (nMode === this.eMode.online_edit || nMode === this.eMode.online_define ) {
+            // Fire event to initialize fsm reload path list when 
+            // nMode indicates online_edit or online_define.
+            this.ShowStatus(sStatusMsg, !bOk);
+            fsmEdit.DoEditTransition(fsmEdit.eventEdit.Init);
+        }
+    };
 
     // ** Private members for html elements
     var that = this;
@@ -809,10 +840,19 @@ function wigo_ws_View() {
 
 
 
+    // Returns new obj for path upload. See path arg for this.onUpload(..) handler
+    function NewUploadPathObj() {
+        var path = {
+            nId: 0,
+            sPathName: "",
+            sOwnerId: "",
+            sShare: "private",
+            arGeoPt: []
+        }
+        return path;
+    }
+
     // **  State Machine for Editing Path, New or Existing
-
-    // Object for Server Action
-
 
     // Object for FSM for editing path.
     function EditFSM(view) {
@@ -855,7 +895,7 @@ function wigo_ws_View() {
             this.DoEditTransition(this.eventEdit.Init);
         };
 
-        // Sets variable indicating path has been changed qne
+        // Sets variable indicating path has been changed.
         this.setPathChanged = function () {
             bPathChanged = true;
         };
@@ -1110,7 +1150,7 @@ function wigo_ws_View() {
 
         // Current select point in the path.
         var curSelectPt = new SelectPoint(this);
-
+        
         // ** State Functions for Editing
 
         // Initialization state for Editing.
@@ -1739,18 +1779,6 @@ function wigo_ws_View() {
             this.Init(bSet);
         }
 
-        // Returns new obj for path upload. See path arg for this.onUpload(..) handler
-        function NewUploadPathObj() {
-            var path = {
-                nId: 0,
-                sPathName: "",
-                sOwnerId: "",
-                sShare: "private",
-                arGeoPt: []
-            }
-            return path;
-        }
-
         // Returns true if gpx path (that.gpxPath) is empty.
         function IsPathEmpty() {
             var bEmpty = true;
@@ -1892,6 +1920,635 @@ function wigo_ws_View() {
         }
     }
 
+    // Object for FSM for recording a path.
+    // Constructor arg:
+    //  view: ref to wigo_ws_View object.
+    function RecordFSM(view) {
+        var that = this;
+
+        // Events for RecordFSM.
+        this.event = {
+            unknown: -1,
+            start: 0,
+            append_to_trail: 1,
+            unclear: 2,
+            pause: 3,  // No longer used.
+            stop: 4,
+            resume: 5,
+            clear: 6,
+            save_trail: 7,
+            append_trail: 8,
+            upload: 9,       
+            cancel: 10,
+            show_stats: 11, 
+        }; 
+
+        // Initialize the RecordFSM (this object).
+        // Arg:
+        //  recordCtrlRef: RecordCtrl object. Ref to DropDownControl from Wigo_Ws_CordovaControls.
+        // Note: var recordCtrl is updated for the current state
+        //       as RecordFSM object changees states.
+        this.initialize = function(recordCtrlRef) {
+            recordCtrl = recordCtrlRef;
+            bOnline = view.curMode() === view.eMode.online_view;  
+            stateInitial.reset();  
+            stateInitial.prepare();
+            curState = stateInitial;
+        };
+        var recordCtrl = null;
+        var bOnline = true; 
+
+        // Transitions this FSM to its next state given an event.
+        // Arg:
+        //  evenValue: property value of this.event causing the transition.
+        this.nextState = function(eventValue) {
+            if (curState) 
+                curState.nextState(eventValue);
+        };
+
+        // Indicates completion of uploading a path to the server.
+        // Args:
+        //  bOk: boolean. true indicates success.
+        //  nId: number. record id at server for the uploaded path.
+        this.uploadPathCompleted = function(bOk, nId) {
+            uploader.uploadCompleted(bOk, nId);    
+        };
+
+        // Returns value for an eventName.
+        // Arg:
+        //  sEventName: string. property name in this.event enumeration object.
+        this.eventValue = function(sEventName) {
+            var eventValue = this.event[sEventName];
+            if (typeof(eventValue) === 'undefined')
+                eventValue = this.event.unknown;
+            return eventValue;
+        };
+
+
+        // Returns true recording point for path is active.
+        this.isRecording = function() {
+            var bYes = curState === stateOn;
+            return bYes;
+        };
+
+        // Set flag to indicate testing.
+        // Arg:
+        //  bTestingArg: boolean. true indicates testing.
+        // Note: When testing, a touch on the map simulates a recording point
+        //       was captured.
+        this.setTesting = function(bTestingArg) {
+            bTesting = bTestingArg;
+        }
+        var bTesting = false;
+
+        // Returns boolean state for testing active.
+        this.isTesting = function() {
+            return bTesting;
+        }
+
+        // Hepler for testing recording a watch point.
+        // Append and draws a point to the record path.
+        // Return true is a point is appended to the path, which is done if testing is
+        // enabled and recording is active. false indicates no point was appended.
+        // Arg:
+        //  llNext: L.LatLng. A simulated watch point to append.
+        this.testWatchPt = function(llNext) {
+            var bRecordPt = bTesting && this.isRecording();
+            if (bRecordPt) {
+                recordWatcher.testWatchPt(llNext);
+            }
+            return bRecordPt;
+        };
+
+        // ** Private members
+        var curState = null; // Current state.
+
+        // Object for tracking geo location using window.navigator.geolocation.watchPosition(..)
+        // when recording a trail.
+        function RecordWatcher() {
+            var that = this;
+
+            // Start watching changes in location for recording.
+            this.watch = function() {
+                myWatchId = navigator.geolocation.watchPosition(
+                    function (position) {
+                        // Success.
+                        if (!bTesting) {
+                            var llNext = new L.LatLng(position.coords.latitude, position.coords.longitude);
+                            AppendAndDrawPt(llNext, position.timestamp);
+                        }
+                    },
+                    function (positionError) {
+                        // Error getting geo location.
+                        ShowGeoLocPositionError(positionError);
+                    },
+                    geoLocationOptions    
+                );
+            };
+
+            // Clear watching the geolocation.
+            this.clear = function() {
+                if (myWatchId)
+                    navigator.geolocation.clearWatch(myWatchId); 
+                myWatchId = null;
+            };
+
+            // Draws and appends a point to record path, but only if testing is active.
+            // Returns boolean for testing active.
+            this.testWatchPt = function(llNext) {
+                if (bTesting) {
+                    var msTimeStamp = Date.now();
+                    AppendAndDrawPt(llNext, msTimeStamp);
+                }
+                return bTesting
+            }
+
+            // ** Private members
+            // Helper to draw and append a recorded point.
+            // Args:
+            //  llNext: L.LatLng. point to append to map.recordPath.
+            //  msTimeStamp: number. timestamp in milliseconds.
+            // Note: This function is shared by navigator.geolocation.watchPosition(...) and
+            //       simulating a watch point for testing.
+            function AppendAndDrawPt(llNext, msTimeStamp) {
+                map.recordPath.appendPt(llNext, msTimeStamp);  
+                map.recordPath.draw();
+            }
+            var myWatchId = null;
+        } 
+        var recordWatcher = new RecordWatcher(); 
+
+        
+        // ** State objects
+        // Record is off. Ready to start.
+        function StateInitial() {
+            // Reset for StateInitial.
+            // Note: Call if unclear is not available before calling this.prepare().
+            this.reset = function() {
+                // Set default for recordShare droplist.
+                selectRecordShareDropDown.setSelected('private');
+                // Reset the uploader for the recorded trail.
+                uploader.clear();
+                // Reset the captured points for trail.
+                map.recordPath.reset();
+            };
+
+            this.prepare = function() {
+                recordCtrl.setLabel("Off")
+                recordCtrl.empty();
+                recordCtrl.appendItem("start", "Start");
+                // Allow undoing clear if recording path exists.
+                if (!map.recordPath.isEmpty()) 
+                    recordCtrl.appendItem("unclear", "Unclear");
+                map.recordPath.clear();
+                // Ensure trail name textbox is hidden.
+                ShowPathDescrBar(false);  
+                view.ClearStatus();
+            };
+
+            this.nextState = function(event) {
+                switch (event) {
+                    case that.event.start: 
+                        this.reset(); 
+                        stateOn.prepare();
+                        curState = stateOn;
+                        break;
+                    case that.event.unclear:
+                        // Display the trail that has been restored.
+                        map.recordPath.draw();
+                        stateOn.prepare();
+                        curState = stateOn;
+                        break;
+                }
+            };
+        }
+        var stateInitial = new StateInitial();
+
+        // Record is running.
+        function StateOn() {
+            this.prepare = function() {
+                recordCtrl.setLabel("On");
+                recordCtrl.empty();
+                recordCtrl.appendItem("stop", "Stop");
+                // Start watching for location change.
+                recordWatcher.watch();
+            };
+
+            this.nextState = function(event) {
+                switch (event) {
+                    case that.event.stop:
+                        var msTimeStamp = Date.now();
+                        map.recordPath.appendPt(null, msTimeStamp, map.recordPath.eRecordPt.PAUSE); 
+                        stateStopped.prepare();
+                        curState = stateStopped;
+                }
+            }
+
+        }
+        var stateOn = new StateOn();
+
+        // Record trail is completed.
+        function StateStopped() {
+            this.prepare = function() {
+                recordWatcher.clear(); // Ensure watching for location change is stopped.
+                recordCtrl.setLabel("Stopped");
+                recordCtrl.empty();
+                var bSavePathValid = bOnline && uploader.isSavePathValid(); 
+                if (bSavePathValid)
+                    recordCtrl.appendItem("save_trail", "Save Trail");
+                var bAppendPathValid = bOnline && uploader.isAppendPathValid();
+                if (bAppendPathValid)
+                    recordCtrl.appendItem('append_trail', "Append Trail");
+                recordCtrl.appendItem("show_stats", "Show Stats");
+                recordCtrl.appendItem("resume", "Resume");
+                recordCtrl.appendItem("clear", "Clear");
+                // Ensure signin ctrl is hidden.
+                ShowSignInCtrl(false);
+                ShowPathDescrBar(false); 
+                if (bOnline && !bSavePathValid && !bAppendPathValid) {  
+                    view.ShowAlert("There is no recorded trail to save.");
+                }
+            };
+
+            this.nextState = function(event) {
+                switch (event) {
+                    case that.event.save_trail: 
+                        if (uploader.isUploadInProgress() ) {
+                            view.ShowAlert("Uploading recording of trail has not completed.<br/>Please wait.");
+                        } else if (uploader.isPathAlreadyDefined()) {
+                            // Update existing trail that has already been uploaded.
+                            uploader.setArGeoPt(); 
+                            uploader.upload();
+                            stateStopped.prepare();
+                            curstate = stateStopped;
+                        } else {
+                            // Define params for a new recorded trail.
+                            stateDefineTrailName.prepare();
+                            curState = stateDefineTrailName;
+                        }
+                        break;
+                    case that.event.append_trail:
+                        if (uploader.isUploadInProgress() ) { 
+                            view.ShowAlert("Uploading recording of trail has not completed.<br/>Please wait.");
+                        } else {
+                            // Upload recorded trail appended to main trail.
+                            uploader.uploadMainPath();
+                            stateStopped.prepare();
+                            curState = stateStopped; 
+                        }
+                        break;
+                    case that.event.show_stats:
+                        ShowStats();
+                        stateStopped.prepare();
+                        curState = stateStopped;
+                        break;
+                    case that.event.resume: 
+                        var msTimeStamp = Date.now();
+                        map.recordPath.appendPt(null, msTimeStamp, map.recordPath.eRecordPt.RESUME); 
+                        stateOn.prepare();
+                        curState = stateOn;
+                        break;
+                    case that.event.clear:
+                        stateInitial.prepare();
+                        curState = stateInitial;
+                        break;
+                }
+            };
+            
+            // Shows current stats. 
+            function ShowStats() {
+                // Helper that returns minutes and seconds for a time interval.
+                // Returns string for minutes and  seconds.
+                // Arg: 
+                //  msInterval: number of milliseconds in the interval.
+                function TimeInterval(msInterval) {
+                    var nSecs = msInterval / 1000;
+                    var nMins = Math.floor(nSecs/60);
+                    var nSecs = nSecs % 60;
+                    var sSecs = "{0}:{1}".format(nMins, nSecs.toFixed(0));
+                    return sSecs;
+                }
+                var stats = map.recordPath.getStats();
+                var sMsg = "";
+                if (stats.bOk) {
+                    var sStartDate = stats.tStart.toLocaleDateString();
+                    var sStartTime = stats.tStart.toLocaleTimeString();
+                    var s = "Stats for {0} {1}<br/>".format(sStartDate, sStartTime);
+                    sMsg += s;
+                    var lc = new LengthConverter();
+                    var sLen = lc.to(stats.dTotal); 
+                    s = "Distance: {0}<br/>".format(sLen);
+                    sMsg += s;
+                    s = "Run Time (mins:secs): {0}<br/>".format(TimeInterval(stats.msRecordTime));
+                    sMsg += s;
+                    // Elapsed time does not seem useful, probably confusing.
+                    // s = "Elapsed Time: {0}<br/>".format(TimeInterval(stats.msElapsedTime));
+                    // sMsg += s;
+                    view.ShowStatus(sMsg, false);
+                } else {
+                    view.ShowStatus("Failed to calculate stats!");
+                }
+            }
+        }
+        var stateStopped = new StateStopped();
+
+
+        // Define name of the trail.
+        function StateDefineTrailName() {
+            this.prepare = function() {
+                recordCtrl.setLabel("TrName");
+                recordCtrl.empty();
+                view.ShowStatus("Enter a name for the trail", false);
+                recordCtrl.appendItem("upload", "Upload");
+                recordCtrl.appendItem("cancel", "Cancel");
+                ShowPathDescrBar(true); 
+                ShowSignInIfNeedBe(); 
+            };
+
+            this.nextState = function(event) {
+                switch(event) {
+                    case that.event.upload:
+                        // Get trail name and upload 
+                        var ok = UploadNewPath();
+                        if (ok.empty) {
+                            ShowPathDescrBar(false); 
+                            stateStopped.prepare();
+                            curState = stateStopped;
+                            view.ShowStatus("The recorded trail is empty.");
+                        } else if (ok.upload) {
+                            ShowPathDescrBar(false);  
+                            stateStopped.prepare();
+                            curState = stateStopped;
+                        }
+                        // Note: If something is wrong for upload stay in same state.
+                        break;
+                    case that.event.cancel:
+                        stateStopped.prepare();
+                        view.ClearStatus();    
+                        curState = stateStopped;
+                        break;
+                }
+            };
+            // Helper to upload new recorded trail. Shows a status message for the result.
+            // Returns {empty: boolean, upload: boolean}:
+            //  empty: boolean. true if path coords are empty (one or no points).
+            //  upload: boolean. upload initiated.
+            // Note: true is returned if recorded path is uploaded or if recorded path is empty or only one coord.
+            function UploadNewPath() {
+                bNewUploadPath = false; // Set to true later if successful.
+                var ok = {empty: false, upload: false};
+                uploader.uploadPath.nId = 0;  // Database record id is 0 for new record.
+                // Set coords to upload.
+                var bOk = uploader.setArGeoPt();
+                if (!bOk) {
+                    ok.empty = true;
+                    return ok;
+                }
+                
+                // Set owner id.
+                bOk = uploader.setOwnerId();
+                if (!bOk)
+                    return ok;
+                
+                bOk = uploader.setPathName();
+                if (!bOk)
+                    return ok;
+
+                // Set share value.
+                uploader.setShare();
+                
+                uploader.upload();
+                ok.upload = true;
+                bNewUploadPath  = true;
+                return ok;
+            }
+        }
+        var stateDefineTrailName = new StateDefineTrailName();
+        var bNewUploadPath = false; // Indicates a new path for trail has been uploaded to server.
+        
+
+        // Shows path description bar, which has textbox for trail name.
+        // Always hides upload, cancel, and delete button.
+        // Arg:
+        //  bShow: boolean. true to show path descr bar.
+        function ShowPathDescrBar(bShow) { 
+            ShowElement(pathDescrBar, bShow);
+            ShowElement(recordShare, bShow);  
+            ShowUploadButton(false);  
+            ShowCancelButton(false);  
+            ShowDeleteButton(false);
+        }
+
+
+        // Helper to get owner id and show signin ctrl if owner id is empty.
+        // Returns owner is string.
+        function ShowSignInIfNeedBe() {
+            var sOwnerId = view.getOwnerId();
+            var bOk = sOwnerId.length > 0;
+            if (!bOk) {
+                view.ShowStatus("Sign-in to upload the recorded trail.", false);
+                ShowSignInCtrl(true);
+            }
+            return sOwnerId;
+        }
+
+        // ** Object to upload a record trail.
+        function Uploader() {
+            this.uploadPath = NewUploadPathObj();
+            // Add properties to uploadPath.
+            // Sets path name from textbox and check if it  is ok for upload. 
+            // If not ok shows a status message.
+            // Returns true for ok.
+            this.setPathName = function() {
+                this.uploadPath.sPathName = txbxPathName.value;
+                var bOk = this.uploadPath.sPathName.length > 0;
+                if (!bOk) {
+                    view.ShowStatus("Enter a name for the trail.");
+                    return bOk;
+                }
+                return bOk;            
+            }; 
+
+            // Assigns owner id and checks if ownerid is ok for upload.
+            // If not ok, shows a status message and the signin control.
+            // Returns true for ok.
+            this.setOwnerId = function() {
+                this.uploadPath.sOwnerId = ShowSignInIfNeedBe();
+                var bOk = this.uploadPath.sOwnerId.length > 0;
+                return bOk;
+            };
+
+            // Assigns uploadPath.arGeoPt for the recocrd path coords to upload.
+            // Checks if length of path is ok. If not shows a status message.
+            // Return true if ok. 
+            this.setArGeoPt = function() {
+                this.uploadPath.arGeoPt = map.recordPath.getGeoPtArray();
+                var bOk = this.uploadPath.arGeoPt.length > 1;
+                if (!bOk) {
+                    view.ShowStatus("No points for the trail have been recorded.");
+                }
+                return bOk; 
+            };
+
+            // Assigns uploadPath.share value from the record share control.
+            this.setShare = function() {
+                this.uploadPath.sShare = selectRecordShareDropDown.getSelectedValue();
+            };
+
+            // Clears the upload path.
+            this.clear = function() {
+                this.uploadPath.nId = 0;
+                this.uploadPath.sOwnerId = "";
+                this.uploadPath.sPathName = "";
+                this.uploadPath.Share = 'private';
+                this.uploadPath.arGeoPt.length = 0;
+                mainUploadPath = null; 
+                bNewUploadPath = false;  
+                txbxPathName.value = ""; 
+            };
+
+            // Indicates the upload has completed.
+            // Arg:
+            //  bOk: boolean. true for upload successful.
+            //  nId: number. database id for the uploaded path. Ignored if bOk is false.
+            this.uploadCompleted = function(bOk, nId) {
+                if (bOk) {
+                    // Note: 20170105 nId may be undefined because server does not return the 
+                    //       the record id for the uploaded path upon completion.
+                    //       However, this should be fixed later.
+                    if (typeof(nId) === 'number')
+                        this.uploadPath.nId = nId;
+                }
+                bUploadInProgress = false;
+            };
+
+            // Upload the path to server. Display status message. 
+            // Returns: nothing.
+            // Note: Call when uploading a recorded trail without a main trail prepended.
+            //       Call this.uploadMainPath() instead if prepending a main trail.
+            this.upload = function() {
+                bUploadInProgress = true;
+                bNewUploadPath = true;      
+                view.onUpload(view.curMode(), this.uploadPath);
+                view.ShowStatus("Uploading recorded trail.", false);
+            };
+
+            // Uploads valid main path to the server with the recording path coords appended.
+            // Returns true if upload is initiated.
+            // Note: this.uploadPath is set to params for main path with arGeoPt of main path prepended.
+            //       Also, mainUploadPath is saved when first appending to main trail. The saved
+            //       path is used after the first time, until this.clear() is called.
+            this.uploadMainPath = function() {
+                if (!mainUploadPath)
+                    mainUploadPath = GetValidMainUploadPath();
+                var bOk = mainUploadPath !== null;
+                if (bOk) {
+                    bUploadInProgress = true;
+                    // Copy main path params to this.uploadPath params, except arGeoPt.
+                    this.uploadPath.nId = mainUploadPath.nId;
+                    this.uploadPath.sPathName = mainUploadPath.sPathName;
+                    this.uploadPath.sOwnerId = mainUploadPath.sOwnerId;
+                    this.uploadPath.sShare = mainUploadPath.sShare;
+                    // Assign coords for the recorded trail to this.uploadPath.arGeoPt. 
+                    this.setArGeoPt(); 
+                    // Prepend main path coords to recorded trail coords.
+                    this.uploadPath.arGeoPt = mainUploadPath.arGeoPt.concat(this.uploadPath.arGeoPt);
+                    // Upload to server.
+                    bUploadInProgress = true;
+                    view.onUpload(view.curMode(), this.uploadPath);
+                    view.ShowStatus("Uploading recorded trail appended to main trail.", false);
+                } else {
+                    view.ShowStatus("Error uploading recorded trail appended to main trail -- failed to obtain main trail!");
+                }
+                return bOk;
+            }
+            var mainUploadPath = null;  // Saved main upload path when a Append Trail is first selected for a main trail.
+
+            // Returns true if path is already defined.
+            // Note: true indicates the path is properly defined, which means 
+            // that the this.uploadPath.nId is not 0 because 0 indicates 
+            // a new path is being defined. If the upload of a new path
+            // is in progress, nId is 0 until the upload has completed.
+            // If the upload is for an existing path, the upload may or may not
+            // be completed.
+            this.isPathAlreadyDefined = function() {
+                var bYes = this.uploadPath.nId > 0; 
+                return bYes;
+            };
+
+            // Returns true if an upload is still in progress.
+            this.isUploadInProgress = function() {
+                return bUploadInProgress;
+            };
+
+            // Returns true if record path can be appended to the main path.
+            // Note: returns false if a recorded trail without a main trail prepended has been uploaded.
+            this.isAppendPathValid = function() {
+                // Check if a recorded path with a main trail prepended has been uploaded.
+                var bYes = !bNewUploadPath;   
+                if (!bYes)
+                    return false;
+
+                // check if recorded path has coords.
+                bYes = !map.recordPath.isEmpty();
+                if (!bYes)
+                    return false;
+                // Check if a main trail is selected.
+                if (mainUploadPath) {
+                    bYes = true;
+                } else {
+                    var testMainUploadPath = GetValidMainUploadPath();
+                    bYes = testMainUploadPath !== null;
+                }
+                return bYes;
+            };
+
+            // Returns true if it is valid to save the recorded path.
+            // Note: If a mainUploadPath has been uploaded, returns false.
+            this.isSavePathValid = function() {
+                var bYes = mainUploadPath === null;
+                if (bYes) {
+                    bYes = map.recordPath.getLength() > 1;
+                }
+                return bYes;
+            }
+
+            // ** Private members
+            // Returns upload path for selected main trail.
+            // Returns if null if there is no main trail selected or 
+            // if selected main train is not found.
+            function GetMainUploadPath() {
+                var mainUploadPath = null;
+                var dataIx = selectGeoTrail.getSelectedValue();
+                if (dataIx > -1 ) {
+                    mainUploadPath = view.onGetUploadPath(view.curMode(), dataIx);
+                }
+                return mainUploadPath;
+            }
+
+            // Returns upload path for a valid, selected main trail.
+            // Returns null if there is no valid selected main trail.
+            // The returned obj is one defined by view.NewUploadPathObj().
+            // Note: a valid main upload path must have owner id match 
+            //       signed in user and database record id > 0.
+            function GetValidMainUploadPath() {
+                var mainUploadPath = GetMainUploadPath(); 
+                // Check if user id matches math owener id.
+                if (mainUploadPath ) {
+                    if (mainUploadPath.nId > 0) {
+                        var sOwnerId = view.getOwnerId();
+                        if (mainUploadPath.sOwnerId !== sOwnerId) 
+                            mainUploadPath = null;
+                    }
+                } 
+                return mainUploadPath;                
+            }
+
+            var bUploadInProgress = false;
+        }
+        var uploader = new Uploader();
+        // **
+    }
 
     // ** More private members
     
@@ -1913,6 +2570,8 @@ function wigo_ws_View() {
     }
 
     var fsmEdit = new EditFSM(this);
+
+    var recordFSM = new RecordFSM(this); 
 
     var nMode = that.eMode.online_view; // Current mode.
     
@@ -2467,6 +3126,9 @@ function wigo_ws_View() {
         // Clear tracking timer if it not on to ensure it is stopped.
         map.bIgnoreMapClick = !settings.bClickForGeoLoc;
         map.dPrevGeoLocThres = settings.dPrevGeoLocThres;
+        // Testing mode for RecordFSM.
+        recordFSM.setTesting(settings.bClickForGeoLoc);   
+
         // Enable phone alerts.
         alerter.bAlertsAllowed = settings.bPhoneAlert;
         alerter.bPhoneEnabled = settings.bPhoneAlert && settings.bOffPathAlert;
@@ -3223,7 +3885,7 @@ function wigo_ws_View() {
         // number. Number of fixed point decimal places for kilometers.
         this.kmeterFixedPoint = 2;
 
-        // Return length in metric or English units based this.bMetric.
+        // Return length in metric or English units based on this.bMetric.
         // Returns: {n: number, unit: string}, where
         //  n is number for the length.
         //  unit: is string specifying kind of unit:
@@ -3548,9 +4210,14 @@ function wigo_ws_View() {
         var nMode = that.curMode();
         if (nMode === that.eMode.online_view || 
             nMode === that.eMode.offline) {
-            map.SetGeoLocationUpdate(llAt, trackTimer.dCloseToPathThres, function(updateResult){
-                ShowGeoLocUpdateStatus(updateResult);
-            });
+            // First check if testing reccording a point.
+            var bRecordedPt = recordFSM.testWatchPt(llAt);
+            // If not a recorded point, update geo location wrt main trail.
+            if (!bRecordedPt) {
+                map.SetGeoLocationUpdate(llAt, trackTimer.dCloseToPathThres, function(updateResult){
+                    ShowGeoLocUpdateStatus(updateResult);
+                });
+            }
         }
     };
 
@@ -3869,7 +4536,18 @@ function wigo_ws_View() {
         if (bClearPath)
             map.ClearPath();
     };
-    
+
+    parentEl = document.getElementById('onlineRecord'); 
+    var onlineRecord = new ctrls.DropDownControl(parentEl, "onlineRecordDropDown", "Off", null, "img/recordicon.png");
+    onlineRecord.onListElClicked = function(dataValue) {
+        recordFSM.nextState(recordFSM.eventValue(dataValue));
+    };
+
+    parentEl = document.getElementById('offlineRecord');  
+    var offlineRecord = new ctrls.DropDownControl(parentEl, "offlineRecordDropDown", "Off", null, "img/recordicon.png");
+    offlineRecord.onListElClicked = function(dataValue) {
+        recordFSM.nextState(recordFSM.eventValue(dataValue));
+    };
 
     // OnOffControl for Phone Alert on map bar.
     var holderMapPhAlertToggle = document.getElementById('mapPhAlertToggle');
@@ -3880,7 +4558,7 @@ function wigo_ws_View() {
         // Show status because Ph Alert on Panel is no longer used.
         var sMsg = nState === 1 ? "Phone Alert On." : "Phone Alert Off.";
         that.ShowStatus(sMsg, false); 
-    }
+    };
 
     // OnOffControl for Tracking on map bar.
     var holderMapTrackToggle = document.getElementById('mapTrackToggle');
@@ -3898,7 +4576,7 @@ function wigo_ws_View() {
         }
         // Start or clear trackTimer.
         RunTrackTimer();
-    }
+    };
 
     // Sets values for the Track and Alert OnOffCtrls on the mapBar.
     // Arg:
@@ -3962,7 +4640,7 @@ Are you sure you want to delete the maps?";
         }
     };
 
-    // DropDownControl for share state for trail.
+    // DropDownControl for share state for trail when editing a trail.
     parentEl = document.getElementById('editDefineShare');
     var selectShareDropDown = new ctrls.DropDownControl(parentEl, "selectShareDropDown", "Share", 'public', "img/ws.wigo.dropdownicon.png");
     var selectShareDropDownValues = [['public', 'Public'], ['private', 'Private']];
@@ -3972,6 +4650,14 @@ Are you sure you want to delete the maps?";
         fsm.setPathChanged();
         fsm.DoEditTransition(fsm.eventEdit.ChangedShare);
     };
+
+    // DropDownControl for share state for trail when recording a trail.
+    var reccordShare = parentEl = document.getElementById('recordShare');  
+    var selectRecordShareDropDown = new ctrls.DropDownControl(parentEl, "selectRecordShareDropDown", "Share", 'private', "img/ws.wigo.dropdownhorizontalicon.png");
+    selectRecordShareDropDown.fill(selectShareDropDownValues);
+    //NotNeeded selectRecordShareDropDown.onListElClicked = function(dataValue) {
+    //NotNeeded };
+
     
     parentEl = document.getElementById('editDefinePtAction');
     var selectPtActionDropDown = new ctrls.DropDownControl(parentEl, "selectPtActionDropDown", "Pt Action", "", "img/ws.wigo.dropdownicon.png")
@@ -4056,6 +4742,31 @@ function wigo_ws_Controller() {
         }
     }
 
+    // Returns geo path upload data for data index from item in the selection list.
+    // Handler signature:
+    //  nMode: byte value of this.eMode enumeration.
+    //  nIx: integer for data index from item in selection list control. 
+    //  Returned object: NewUploadPathObj().
+    //                   null if nIx is out of range.
+    view.onGetUploadPath = function (nMode, nIx) { 
+        var uploadPath = null; 
+        if (nMode === view.eMode.online_view) {
+            if (gpxArray && nIx >= 0 && nIx < gpxArray.length) {
+                // Get the gpx data as it comes from the server.
+                var gpx = gpxArray[nIx]; // gpx is wigo_ws_Gpx object.
+                var gpxPath = model.ParseGpxXml(gpx.xmlData); // Parse the xml to get wigo_ws_GpxPath obj.
+                uploadPath = view.NewUploadPathObj();
+                uploadPath.nId = gpx.nId;
+                uploadPath.sOwnerId = gpx.sOwnerId;
+                uploadPath.sPathName = gpx.sName;
+                var eShare = model.eShare();
+                uploadPath.sShare = eShare.toStr(gpx.eShare);
+                uploadPath.arGeoPt = gpxPath.arGeoPt;
+            }
+        }        
+        return uploadPath;
+    };
+
     // Save offline parameters for the selected geo path.
     view.onSavePathOffline = function (nMode, params) {
         // Save the params to storage.
@@ -4104,8 +4815,8 @@ function wigo_ws_Controller() {
 
     // Upload a path to the server.
     //  nMode: byte value of this.eMode enumeration.
-    //  path: path data object which contains array of GeoPt elements and other members.
-    //        In view obj, see this.onUpload description for this handler.
+    //  path: Obj created by view.NewUploadPathObj().
+    //        upload path object which contains array of GeoPt elements and other members.
     view.onUpload = function (nMode, path) { 
         if (model.IsOwnerAccessValid()) {
             var gpx = new wigo_ws_Gpx();
@@ -4123,32 +4834,34 @@ function wigo_ws_Controller() {
             var bOk = model.putGpx(gpx,
                 // Async callback upon storing record at server.
                 function (bOk, sStatus) {
+                    var nId = 0;
+                    var sStatusMsg;
                     if (bOk) {
                         var oStatus = JSON.parse(sStatus);
+                        nId = oStatus.nId;
                         var eDuplicate = model.eDuplicate();
                         if (oStatus.eDup === eDuplicate.Renamed) {
-                            // Show message about renaming path.
-                            view.ShowStatus(oStatus.sMsg, true); // true shows message hightlighted.
+                            // Set message about renaming path.
+                            sStatusMsg = oStatus.sMsg;
                         } else if (oStatus.eDup === eDuplicate.Match) {
                             // gpx obj has same name as its record in database so there is no name change.
                             // No need to reload the list of paths.
-                            view.ShowStatus("Successfully uploaded GPX trail.", false);
+                            sStatusMsg = "Successfully uploaded GPX trail.";
                         } else if (oStatus.eDup === eDuplicate.NotDup) {
-                            view.ShowStatus("Successfully uploaded GPX trail.", false);
+                            sStatusMsg = "Successfully uploaded GPX trail.";
                         } else {
-                            view.ShowStatus("Error occurred uploading GPX trail.");
+                            sStatusMsg = "Error occurred uploading GPX trail.";
                         }
                     } else {
-                        // Show error message.
-                        view.ShowStatus(sStatus, !bOk)
+                        // Set error message.
+                        sStatusMsg = sStatus;
                     }
-                    // Fire event to initialize edit fsm reload path list.
-                    var fsm = view.fsmEdit();
-                    fsm.DoEditTransition(fsm.eventEdit.Init);
+
+                    view.uploadPathCompleted(nMode, bOk, sStatusMsg, nId);
                 });
             if (!bOk) {
-                var sError = "Cannot upload GPX trail to server because another transfer is already in progress."
-                view.ShowStatus(sError, !bOk);
+                var sError = "Cannot upload GPX trail to server because another transfer is already in progress.";
+                view.uploadPathCompleted(nMode, bOk, sError, 0);
             }
         }
     };
