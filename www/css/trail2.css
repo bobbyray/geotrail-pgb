@@ -194,9 +194,11 @@ label {
 {
     width: 100%;
     float: left;
-    margin-top: 5px;
-    margin-left: 5px;
-    margin-bottom: 0px;
+    padding-top: 5px;
+    padding-left: 5px;
+    padding-right: 0px;
+    padding-bottom: 0px;
+    box-sizing: border-box;
 }
 
 #buSaveOffline {
@@ -577,9 +579,10 @@ label {
 #onlineOfflineEditBar {
     clear: both;
     float: left;
-    height: 5.0em;
+    height: 5.5em;
     width: 100%;
     box-sizing: border-box;  
+    padding-top: 4px;
 }
 
 #divTrailInfo {
