@@ -1,6 +1,6 @@
 ﻿'use strict';
 /* 
-Copyright (c) 2015, 2016 Robert R Schomburg
+Copyright (c) 2015 - 2017 Robert R Schomburg
 Licensed under terms of the MIT License, which is given at
 https://github.com/bobbyray/MitLicense/releases/tag/v1.0
 */
@@ -41,8 +41,8 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 
 // Object for View present by page.
 function wigo_ws_View() {
-    // Release buld for Google Play on 09/20/2016 16:03
-    var sVersion = "1.1.022_20170117_1737"; // Constant string for App version.
+    // Release build for Google Play on 01/26/2017 16:44
+    var sVersion = "1.1.022"; // Constant string for App version.
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -346,13 +346,24 @@ function wigo_ws_View() {
         titleBar.scrollIntoView(); 
     };
 
+    // Shows the signin control bar. 
+    // Arg:
+    //  bShow: boolean. true to show. 
+    this.ShowSignInCtrl = function(bShow) { 
+        ShowSignInCtrl(bShow);
+    }
+
     // Displays an Alert message box which user must dismiss.
     // Arg:
     //  sMsg: string for message displayed.
-    this.ShowAlert = function (sMsg) {
+    // Args:
+    //  sMsg: string. message to display.
+    //  onDone: function, optional, defaults to null. callback after user dismisses the dialog. callback has no arg.
+    // Note: ShowAlert(..) returns immediately. callback after dialog is dismissed is asynchronous.
+    this.ShowAlert = function (sMsg, onDone) {  
         var reBreak = new RegExp('<br/>', 'g'); // Pattern to replace <br/>.
         var s = sMsg.replace(reBreak, '\n');    // Replace <br/> with \n.
-        AlertMsg(s);
+        AlertMsg(s, onDone);  
     };
 
     // Display confirmation dialog with Yes, No as default for buttons.
@@ -558,22 +569,21 @@ function wigo_ws_View() {
         }
     };
 
-    // Indicates that uploading a path has completed.
+    // Indicates that uploading or deleting a path has completed.
     // Args:
     //  nMode: enumeration value of this.eMode(). Mode for the uplooad.
     //  bOk: boolean. true for upload successful.
     //  sStatusMsg: string. status msg to show.
     //  nId: number. record id at server for uploated path.
     //  sPathName: string. name of the path. (server rename path to avoid duplicate name.)
-    this.uploadPathCompleted = function(nMode, bOk, sStatusMsg, nId, sPathName) {  
+    //  bUpload: boolean. true for uploaded, false for deleted.
+    this.uploadPathCompleted = function(nMode, bOk, sStatusMsg, nId, sPathName, bDelete) {   
         if (nMode === this.eMode.online_view) {
             this.ShowStatus(sStatusMsg, !bOk);
             recordFSM.uploadPathCompleted(bOk, nId, sPathName); 
         } else if (nMode === this.eMode.online_edit || nMode === this.eMode.online_define ) {
-            // Fire event to initialize fsm reload path list when 
-            // nMode indicates online_edit or online_define.
             this.ShowStatus(sStatusMsg, !bOk);
-            fsmEdit.DoEditTransition(fsmEdit.eventEdit.Init);
+            fsmEdit.uploadPathCompleted(bOk, sStatusMsg);
         }
     };
 
@@ -582,8 +592,8 @@ function wigo_ws_View() {
     //       to see if a list of trails should be loaded. If the login is for recording
     //       a new trail, the list of trails should not be reloaded because such 
     //       a download from the server server interfers with uploading a new trail.
-    this.isRecordingDefiningTrailName = function() {
-        return recordFSM.isDefiningTrailName();
+    this.IsRecordingSignInActive = function() {
+        return recordFSM.isSignInActive();
     }
 
     // ** Private members for html elements
@@ -906,7 +916,9 @@ function wigo_ws_View() {
             PathIxNext: 15,
             PathIxPrev: 16,
             DeletePtDo: 17,
-            ChangedShare: 18
+            ChangedShare: 18,
+            Error: 19, 
+            Completed_Ok: 20, // Upload or Delete completed successfully. 
         };
 
         this.Initialize = function(bNewArg) {
@@ -935,6 +947,21 @@ function wigo_ws_View() {
             // Clear the drop list for selection a geo path.
             view.setPathList([]);
 
+        };
+
+        // Uploading to server or deleting at server has completed.
+        // Arg:
+        //  bOk: boolean. true for success. 
+        //  sMsg: string. messages showing the result.
+        this.uploadPathCompleted = function(bOk, sMsg) {  
+            view.ShowAlert(sMsg);
+            // Note: ShowAlert(sMsg) presents dialog box with Ok button, but code flow
+            //       continues immediately. Therefore dialog box is shown rather 
+            //       than a status message, which would be over-written by eventEdit.Init.
+            if (bOk)
+                this.DoEditTransition(this.eventEdit.Completed_Ok);
+            else 
+                this.DoEditTransition(this.eventEdit.Error);
         };
 
         // Transition for Edit FSM.
@@ -1367,7 +1394,7 @@ function wigo_ws_View() {
         // Waiting for upload to be completed.
         function stUploadPending(event) { 
             switch(event) {
-                case that.eventEdit.Init:
+                case that.eventEdit.Completed_Ok:
                     // Fire  init event to re-initialize.
                     curEditState = stEditInit;
                     that.DoEditTransition(that.eventEdit.Init);
@@ -1376,13 +1403,20 @@ function wigo_ws_View() {
                     CancelIfUserOks("Quit waiting for acknowlegement from server of upload?");
                     // Goes to stEditInit if user oks.
                     break;
+                case that.eventEdit.Error:  
+                    // stay in same state. 
+                    ShowSignInCtrl(true);
+                    view.ShowAlert("Upload failed. You may need to sign-in. Please try again.");
+                    PrepareForEditing();
+                    curEditState = stEdit;
+                    break;
             }
         }
 
         // Waiting for delete to be completed
         function stDeletePending(event) {
             switch (event) {
-                case that.eventEdit.Init:
+                case that.eventEdit.Completed_Ok:
                     // Deletion was successful.
                     // Fire  init event to re-initialize.
                     // The initialization will reload the drop list for selection of a geo path.
@@ -1393,8 +1427,14 @@ function wigo_ws_View() {
                     CancelIfUserOks("Quit waiting for acknowlegement from server of delete?");
                     // Goes to stEditInit if user oks.
                     break;
+                case that.eventEdit.Error:  
+                    // stay in same state. 
+                    ShowSignInCtrl(true);
+                    view.ShowAlert("Delete failed. You may need to sign-in. Please try again.");
+                    PrepareForEditing();
+                    curEditState = stEdit;
+                    break;
             }
-
         }
         
         function stAppendPt(event) {
@@ -1542,7 +1582,7 @@ function wigo_ws_View() {
                 case that.eventEdit.Upload:
                     // Upload path data to server.
                     DoUpload();
-                    // Goes to stUploadPending unless path does not exist.
+                    // Goes to stUploadPending.
                     break;
                 case that.eventEdit.Cancel:
                     CancelIfUserOks();
@@ -1916,8 +1956,8 @@ function wigo_ws_View() {
         }
 
         // Uploads path data to server.
-        // Returns true if path can be uploaded and sets current state to stUploadPending.
-        // If paths can not be uploaded returns false and stays in same state.
+        // Returns true if upload is initiated and sets current state to stUploadPending.
+        // If paths can not be uploaded returns false.
         function DoUpload() {
             var bOk = false;
             if (that.gpxPath) { // Ignore if gpxPath obj does not exists.
@@ -1928,11 +1968,10 @@ function wigo_ws_View() {
                     path.sPathName = txbxPathName.value;
                     path.sShare = selectShareDropDown.getSelectedValue();
                     path.arGeoPt = that.gpxPath.arGeoPt;
+                    curEditState = stUploadPending; 
                     view.onUpload(view.curMode(), path);
                     view.ShowStatus("Uploading trail to server.", false);
                     bOk = true;
-                    curEditState = stUploadPending;
-
                 } else {
                     var sMsg = "Cannot upload the geo trail because it must have more than one point.";
                     AlertMsg(sMsg);
@@ -1959,7 +1998,7 @@ function wigo_ws_View() {
             resume: 5,
             clear: 6,
             save_trail: 7,
-            append_trail: 8,
+            append_trail: 8, // No longer used
             upload: 9,       
             cancel: 10,
             show_stats: 11, 
@@ -2017,9 +2056,8 @@ function wigo_ws_View() {
         };
 
         // Reeturns true if in state for defining a trail name.
-        this.isDefiningTrailName = function() { 
-            var bYes = curState === stateDefineTrailName;
-            return bYes;
+        this.isSignInActive = function() { 
+            return signin.isSignInActive();  
         }
 
         // Returns true if recording is off.
@@ -2194,14 +2232,15 @@ function wigo_ws_View() {
                 var bSavePathValid = bOnline && uploader.isSavePathValid(); 
                 if (bSavePathValid)
                     recordCtrl.appendItem("save_trail", "Save Trail");
-                var bAppendPathValid = bOnline && uploader.isAppendPathValid();
-                if (bAppendPathValid)
-                    recordCtrl.appendItem('append_trail', "Append Trail");
+                // Decided not use append_trail. Instead use Edit mode to insert another trail.
+                // var bAppendPathValid = bOnline && uploader.isAppendPathValid();
+                // if (bAppendPathValid)
+                //     recordCtrl.appendItem('append_trail', "Append Trail");
                 recordCtrl.appendItem("show_stats", "Show Stats");
                 recordCtrl.appendItem("resume", "Resume");
                 recordCtrl.appendItem("clear", "Clear");
                 // Ensure signin ctrl is hidden.
-                ShowSignInCtrl(false);
+                signin.hide();
                 ShowPathDescrBar(false); 
                 if (bOnline && !bSavePathValid && !bAppendPathValid) {  
                     view.ShowAlert("There is no recorded trail to save.");
@@ -2218,23 +2257,24 @@ function wigo_ws_View() {
                             uploader.setArGeoPt(); 
                             uploader.upload();
                             stateStopped.prepare();
-                            curstate = stateStopped;
+                            curState = stateStopped;
                         } else {
                             // Define params for a new recorded trail.
                             stateDefineTrailName.prepare();
                             curState = stateDefineTrailName;
                         }
                         break;
-                    case that.event.append_trail:
-                        if (uploader.isUploadInProgress() ) { 
-                            view.ShowAlert("Uploading recording of trail has not completed.<br/>Please wait.");
-                        } else {
-                            // Upload recorded trail appended to main trail.
-                            uploader.uploadMainPath();
-                            stateStopped.prepare();
-                            curState = stateStopped; 
-                        }
-                        break;
+                    // case that.event.append_trail: // Note: this case is no longer used.
+                    //     if (uploader.isUploadInProgress() ) { 
+                    //         view.ShowAlert("Uploading recording of trail has not completed.<br/>Please wait.");
+                    //     } else {
+                    //         // Upload recorded trail appended to main trail.
+                    //         // Note: If later decide to use append_trail, change to present confirm dialog, view.ShowConfirm(..).
+                    //         uploader.uploadMainPath();
+                    //         stateStopped.prepare();
+                    //         curState = stateStopped; 
+                    //     }
+                    //     break;
                     case that.event.show_stats:
                         ShowStats();
                         stateStopped.prepare();
@@ -2263,7 +2303,8 @@ function wigo_ws_View() {
                     var nSecs = msInterval / 1000;
                     var nMins = Math.floor(nSecs/60);
                     var nSecs = nSecs % 60;
-                    var sSecs = "{0}:{1}".format(nMins, nSecs.toFixed(0));
+                    var sSecs = nSecs < 10 ? "0" + nSecs.toFixed(0) : nSecs.toFixed(0);
+                    var sSecs = "{0}:{1}".format(nMins, sSecs);
                     return sSecs;
                 }
                 var stats = map.recordPath.getStats();
@@ -2300,7 +2341,7 @@ function wigo_ws_View() {
                 recordCtrl.appendItem("upload", "Upload");
                 recordCtrl.appendItem("cancel", "Cancel");
                 ShowPathDescrBar(true); 
-                ShowSignInIfNeedBe(); 
+                signin.showIfNeedBe(); 
             };
 
             this.nextState = function(event) {
@@ -2377,23 +2418,53 @@ function wigo_ws_View() {
             ShowDeleteButton(false);
         }
 
-
-        // Helper to get owner id and show signin ctrl if owner id is empty.
-        // Returns owner id string.
-        function ShowSignInIfNeedBe() {
-            var sOwnerId = view.getOwnerId();
-            var bOk = sOwnerId.length > 0;
-            if (!bOk) {
-                view.ShowStatus("Sign-in to upload the recorded trail.", false);
+        // Object for managing sign-in control bar for Record.
+        function RecordSignIn() {
+            // Shows the signin control bar.
+            this.show = function() {
+                bSignInActive = true;
                 ShowSignInCtrl(true);
+            };
+
+            // Gets owner id and shows signin ctrl if owner id is empty.
+            // Returns owner id string.
+            this.showIfNeedBe = function() {
+                var sOwnerId = view.getOwnerId();
+                var bOk = sOwnerId.length > 0;
+                if (!bOk) {
+                    view.ShowStatus("Sign-in to upload the recorded trail.", false);
+                    this.show();
+                }
+                return sOwnerId;
+            };
+
+            // Hides the signin control bar.
+            this.hide = function() {
+                bSignInActive = false;
+                ShowSignInCtrl(false);
+            };
+
+            // Returns boolean to indicate if signin for Record is active.
+            // Note: this.show() sets active, this.hide() claars active.
+            this.isSignInActive = function() {
+                return bSignInActive;
             }
-            return sOwnerId;
+
+            var bSignInActive = false; // Indicates that signin is active.
         }
+        var signin = new RecordSignIn();
+
 
         // ** Object to upload a record trail.
         function Uploader() {
+            // Object describing the upload path:
+            //  nId: number. database record id.
+            //  sPathName: string. path name.
+            //  sShare: string: share value (public or private).
+            //  arGeoPt: array of wigo_ws_GeoPt obj. Lattitude and longitude of points in the path.
             this.uploadPath = NewUploadPathObj();
-            // Add properties to uploadPath.
+
+            // Add methods to set properties of this.uploadPath.
             // Sets path name from textbox and check if it  is ok for upload. 
             // If not ok shows a status message.
             // Returns true for ok.
@@ -2411,7 +2482,7 @@ function wigo_ws_View() {
             // If not ok, shows a status message and the signin control.
             // Returns true for ok.
             this.setOwnerId = function() {
-                this.uploadPath.sOwnerId = ShowSignInIfNeedBe();
+                this.uploadPath.sOwnerId = signin.showIfNeedBe(); 
                 var bOk = this.uploadPath.sOwnerId.length > 0;
                 return bOk;
             };
@@ -2459,10 +2530,13 @@ function wigo_ws_View() {
                         this.uploadPath.nId = nId;
                         this.uploadPath.sPathName = sPathName; 
                 } else {
-                    view.ShowAlert("Upload failed. Another transfer may be in progress. Please wait and try again.");
+                    view.ShowAlert("Upload failed. You may need to sign-in. Please try again.",
+                        function() {  
+                            signin.show(); 
+                        }
+                    );
                 }
                 bUploadInProgress = false;
-                
             };
 
             // Upload the path to server. Display status message. 
@@ -2684,17 +2758,23 @@ function wigo_ws_View() {
 
     // Returns About message for this app.
     function AboutMsg() {
-        var sCopyright = "2015, 2016";
+        var sCopyright = "2015 - 2017";
         var sMsg =
         "Version {0}\nCopyright (c) {1} Robert R Schomburg\n".format(sVersion, sCopyright);
         return sMsg;
     }
 
     // Displays alert message given the string sMsg.
-    function AlertMsg(sMsg) {
+    // Args:
+    //  sMsg: string. message to display.
+    //  onDone: function. callback after user dismisses the dialog. callback has no arg.
+    // Note: AlertMsg(..) returns immediately. callback after dialog is dismissed is asynchronous.
+    function AlertMsg(sMsg, onDone) {
+        if (typeof(onDone) !== 'function')  
+            onDone = null;                 
         var sTitle = document.title;
         if (navigator.notification)
-            navigator.notification.alert(sMsg, null, sTitle);
+            navigator.notification.alert(sMsg, onDone, sTitle); 
         else
             alert(sMsg);
 
@@ -4437,6 +4517,12 @@ function wigo_ws_View() {
             that.setModeUI(nMode);
         }
 
+        // Signin is no longer a mode change. Instead show the signin control bar.
+        if (that.eMode[dataValue] === that.eMode.select_mode) {  
+            ShowSignInCtrl(true);
+            return;
+        }
+
         if (fsmEdit.IsPathChanged()) {
             ConfirmYesNo("The geo trail has been changed. OK to continue and loose any change?", function (bConfirm) {
                 if (bConfirm) {
@@ -4448,7 +4534,7 @@ function wigo_ws_View() {
                 }
             });
         } else if (!recordFSM.isOff()) { 
-            ConfirmYesNo("Recording a trail is in progress. OK to continue and clear the recording?", function(bConfirm){
+            ConfirmYesNo("Recording a trail is in progress. OK to continue and delete the recording?", function(bConfirm){
                 if (bConfirm) {
                     recordFSM.initialize(); // Reset recording.
                     AcceptModeChange();
@@ -4911,16 +4997,21 @@ function wigo_ws_Controller() {
                         }
                     } else {
                         // Set error message.
+                        if (!sStatus) 
+                            sStatus = "Error trying to upload GPX trail to server.";
                         sStatusMsg = sStatus;
                     }
-
-                    view.uploadPathCompleted(nMode, bOk, sStatusMsg, nId, sPathName); 
+                    view.uploadPathCompleted(nMode, bOk, sStatusMsg, nId, sPathName, true); // true => upload. 
                 });
             if (!bOk) {
                 var sError = "Cannot upload GPX trail to server because another transfer is already in progress.";
-                view.uploadPathCompleted(nMode, bOk, sError, 0, ""); 
+                view.uploadPathCompleted(nMode, bOk, sError, path.nId, path.sPathName, true); // true => upload. 
             }
-        }
+        } else { 
+            var sError = "Owner must be signed in to upload GPX trail to server.";
+            view.ShowStatus(sError);
+            view.uploadPathCompleted(nMode, bOk, sError, path.nId, path.sPathName, true); // true => upload.
+        }        
     };
 
     // Delete a geo path record at the server.
@@ -4934,19 +5025,21 @@ function wigo_ws_Controller() {
             var bOk = model.deleteGpx(gpxId,
                 // Async callback upon storing record at server.
                 function (bOk, sStatus) {
+                    if (!sStatus) 
+                        sStatus = "Error trying to delete GPX trail at server.";
                     var sMsg = bOk ? "Successfully deleted GPX trail at server." : sStatus;
                     view.ShowStatus(sMsg, !bOk);
-                    fsm.DoEditTransition(fsm.eventEdit.Init);
-
+                    view.uploadPathCompleted(nMode, bOk, sMsg, gpxId.nId, "", false); // Note: empty string for path name means not known. false => delete.
                 });
             if (!bOk) {
-                var sError = "Cannot delete GPX trail at server because another transfer is already in progress."
+                var sError = "Cannot delete GPX trail at server because another transfer is already in progress.";
                 view.ShowStatus(sError, !bOk);
-                fsm.DoEditTransition(fsm.eventEdit.Init);
+                view.uploadPathCompleted(nMode, bOk, sError, gpxId.nId, "", false); // Note: empty string for path name means not known. false => delete.
             }
         } else {
-            ShowStatus("Owner must be signed in to delete GPX trail at server.");
-            fsm.DoEditTransition(fsm.eventEdit.Init);
+            var sError = "Owner must be signed in to delete GPX trail at server.";
+            view.ShowStatus(sError);
+            view.uploadPathCompleted(nMode, bOk, sError, gpxId.nId, "", false); // Note: empty string for path name means not known. false => delete.
         }
     };
 
@@ -5009,7 +5102,7 @@ function wigo_ws_Controller() {
                         // request is in already in progress. Always calling view.onGetPaths() works
                         // fairly well, but can be confusing to user if it causes uploading a new trail to fail,
                         // in which case the user would need to retry uploading the trail.
-                        if (!view.isRecordingDefiningTrailName())   
+                        if (!view.IsRecordingSignInActive())   
                             view.onGetPaths(view.curMode(), view.getOwnerId());
                     } else if (nMode === view.eMode.online_edit ||
                                nMode === view.eMode.online_define) {
@@ -5126,7 +5219,7 @@ function wigo_ws_Controller() {
         // Appends to path list and shows status message.
         function AppendToPathList (bOk, gpxList, sStatus) {
             if (bOk) {
-                for (var i = 0; i < gpxList.length; i++) {
+                for (var i = 0; gpxList && i < gpxList.length; i++) { 
                     arPath.push(gpxList[i].sName);
                     gpxArray.push(gpxList[i]);
                 }
@@ -5172,6 +5265,13 @@ function wigo_ws_Controller() {
             // Show number of paths found.
             if (bOk) {
                 view.ShowStatus(StatusOkMsg(arPath.length), false); 
+                // Ensure signin control bar is hidden in case it was shown
+                // due to an authentication failure.
+                view.ShowSignInCtrl(false); 
+            } else { 
+                // The error is typically due to authentication failure. 
+                // Show signin controll bar so that user can signin.
+                view.ShowSignInCtrl(true);  
             }
         }
 
@@ -5202,6 +5302,7 @@ function wigo_ws_Controller() {
                 view.ShowStatus("Searching for All Public Trails.", false);
                 model.getGpxList("any", eShare.public, function (bOk, gpxList, sStatus) {
                     AppendToPathList(bOk, gpxList, sStatus);
+                    /* Comment out getting private trails of logged in user. Confusing to mix public and private.
                     if (bOk && sPathOwnerId) {
                         // Append all private paths for path owner.
                         model.getGpxList(sPathOwnerId, eShare.private, function (bOk, gpxList, sStatus) {
@@ -5211,6 +5312,8 @@ function wigo_ws_Controller() {
                     } else {
                         SetPathList(bOk);
                     }
+                    */
+                    SetPathList(bOk); 
                 });
                 break;
             case view.eFindIx.all_mine:
