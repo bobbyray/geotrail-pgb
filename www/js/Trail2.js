@@ -41,8 +41,8 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 
 // Object for View present by page.
 function wigo_ws_View() {
-    // Release build for Google Play on 01/26/2017 16:44
-    var sVersion = "1.1.023"; // Constant string for App version.
+    // Work on RecordingTrail2 branch. Filter spurious record points.
+    var sVersion = "1.1.024_20170214_1453"; // Constant string for App version.
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -2002,6 +2002,8 @@ function wigo_ws_View() {
             upload: 9,       
             cancel: 10,
             show_stats: 11, 
+            filter: 12,     
+            unfilter: 13,   
         }; 
 
         // Initialize the RecordFSM (this object).
@@ -2239,6 +2241,12 @@ function wigo_ws_View() {
                 recordCtrl.appendItem("show_stats", "Show Stats");
                 recordCtrl.appendItem("resume", "Resume");
                 recordCtrl.appendItem("clear", "Clear");
+
+                if (map.recordPath.isFilterEnabled()) {
+                        recordCtrl.appendItem("filter", "Filter");
+                } else if (map.recordPath.isUnfilterEnabled()) {
+                        recordCtrl.appendItem("unfilter", "Unfilter");
+                }
                 // Ensure signin ctrl is hidden.
                 signin.hide();
                 ShowPathDescrBar(false); 
@@ -2290,6 +2298,24 @@ function wigo_ws_View() {
                         stateInitial.prepare();
                         curState = stateInitial;
                         break;
+                    case that.event.filter: 
+                        var filterResult = map.recordPath.filter();
+                        var sMsg;
+                        if (filterResult.nDeleted <= 0)
+                            sMsg = "No points filtered out."
+                        else if (filterResult.nDeleted === 1)
+                            sMsg = "1 point filtered out."; 
+                        else 
+                            sMsg = "{0} points filtered out.".format(filterResult.nDeleted);
+                        view.ShowStatus(sMsg, false);
+                        stateStopped.prepare();
+                        curState = stateStopped;
+                        break;
+                    case that.event.unfilter: 
+                        map.recordPath.unfilter();
+                        stateStopped.prepare();
+                        curState = stateStopped;
+                        break;
                 }
             };
             
@@ -2328,6 +2354,7 @@ function wigo_ws_View() {
                     view.ShowStatus("Failed to calculate stats!");
                 }
             }
+
         }
         var stateStopped = new StateStopped();
 
