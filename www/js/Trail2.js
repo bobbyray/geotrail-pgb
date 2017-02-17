@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Work on RecordingTrail2 branch. Filter spurious record points.
-    var sVersion = "1.1.024_20170214_1453"; // Constant string for App version.
+    var sVersion = "1.1.024_20170216_1600"; // Constant string for App version.
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -2004,18 +2004,6 @@ function wigo_ws_View() {
             show_stats: 11, 
             filter: 12,     
             unfilter: 13,   
-            setVLimit: 14,   ////20170215 added
-            vLimit02: 15,    ////20170215 added vLimitnn
-            vLimit05: 16,
-            vLimit10: 17,
-            vLimit15: 18,
-            vLimit20: 19,
-            vLimit25: 20,
-            vLimit30: 21,
-            vLimit35: 22,
-            vLimit40: 23,
-            vLimit45: 24,
-            vLimit50: 25,
         }; 
 
         // Initialize the RecordFSM (this object).
@@ -2256,7 +2244,6 @@ function wigo_ws_View() {
 
                 if (map.recordPath.isFilterEnabled()) {
                         recordCtrl.appendItem("filter", "Filter");
-                        recordCtrl.appendItem("setVLimit", "Filter Thres");
                 } else if (map.recordPath.isUnfilterEnabled()) {
                         recordCtrl.appendItem("unfilter", "Unfilter");
                 }
@@ -2328,10 +2315,6 @@ function wigo_ws_View() {
                         map.recordPath.unfilter();
                         stateStopped.prepare();
                         curState = stateStopped;
-                        break;
-                    case that.event.setVLimit: ////20170215 added
-                        stateSetVelocityLimit.prepare();
-                        curState = stateSetVelocityLimit;
                         break;
                 }
             };
@@ -2448,69 +2431,6 @@ function wigo_ws_View() {
         }
         var stateDefineTrailName = new StateDefineTrailName();
         var bNewUploadPath = false; // Indicates a new path for trail has been uploaded to server.
-        
-        // Set velocity limit.
-        function StateSetVelocityLimit() {
-            this.prepare = function() {
-                var sCurVLimit = "{0}m/sec".format(map.recordPath.getVLimit().toFixed(0));
-                recordCtrl.setLabel(sCurVLimit);
-                recordCtrl.empty();
-                /* ////
-                vLimit02: 15,    ////20170215 added vLimitnn
-                vLimit05: 16,
-                vLimit10: 17,
-                vLimit15: 18,
-                vLimit20: 19,
-                vLimit25: 20,
-                vLimit30: 21,
-                vLimit35: 22,
-                vLimit40: 23,
-                vLimit45: 24,
-                vLimit50: 25,
-                
-                */
-                recordCtrl.appendItem("vLimit02", " 2 m/sec");
-                recordCtrl.appendItem("vLimit05", " 5 m/sec");
-                recordCtrl.appendItem("vLimit10", "10 m/sec");
-                recordCtrl.appendItem("vLimit15", "15 m/sec");
-                recordCtrl.appendItem("vLimit20", "20 m/sec");
-                recordCtrl.appendItem("vLimit25", "25 m/sec");
-                recordCtrl.appendItem("vLimit30", "30 m/sec");
-                recordCtrl.appendItem("vLimit35", "35 m/sec");
-                recordCtrl.appendItem("vLimit40", "40 m/sec");
-                recordCtrl.appendItem("vLimit45", "45 m/sec");
-                recordCtrl.appendItem("vLimit50", "50 m/sec");
-                recordCtrl.drop(true); // Show the droplist right away.
-
-                view.ShowStatus("Select velocity limit for filtering.", false);
-            };
-
-            this.nextState = function(event) {
-                switch(event) {
-                    case that.event.vLimit02: toStoppedState(2.0); break;
-                    case that.event.vLimit05: toStoppedState(5.0); break;
-                    case that.event.vLimit10: toStoppedState(10.0); break;
-                    case that.event.vLimit15: toStoppedState(15.0); break;
-                    case that.event.vLimit20: toStoppedState(20.0); break;
-                    case that.event.vLimit25: toStoppedState(25.0); break;
-                    case that.event.vLimit30: toStoppedState(30.0); break;
-                    case that.event.vLimit35: toStoppedState(35.0); break;
-                    case that.event.vLimit40: toStoppedState(40.0); break;
-                    case that.event.vLimit45: toStoppedState(45.0); break;
-                    case that.event.vLimit50: toStoppedState(50.0); break;
-                }
-            };
-
-            // Helper to transition to stopped state.
-            // Arg:
-            //  limit: number. limit to which vLimit is set.
-            function toStoppedState(limit) {
-                map.recordPath.setVLimit(limit);
-                stateStopped.prepare();
-                curState = stateStopped;
-            }
-        }
-        var stateSetVelocityLimit = new StateSetVelocityLimit();
 
         // Shows path description bar, which has textbox for trail name.
         // Always hides upload, cancel, and delete button.
@@ -3152,6 +3072,28 @@ function wigo_ws_View() {
     ];
     numberPrevGeoLocThresMeters.fill(numberPrevGeoLocThresMetersValues);
 
+    parentEl = document.getElementById('holderSpuriouVLimit'); 
+    var numberSpuriousVLimit = new ctrls.DropDownControl(parentEl, null, 'Spurious V Limit', '', 'img/ws.wigo.dropdownhorizontalicon.png');
+    var numberSpuriousVLimitValues = 
+    [
+        ["1", " 1 m/sec"],
+        ["2", " 2 m/sec"],
+        ["3", " 3 m/sec"],
+        ["4", " 4 m/sec"],
+        ["5", " 5 m/sec"],
+        ["10", "10 m/sec"],
+        ["15", "15 m/sec"],
+        ["20", "20 m/sec"],
+        ["25", "25 m/sec"],
+        ["30", "30 m/sec"],
+        ["35", "35 m/sec"],
+        ["40", "40 m/sec"],
+        ["45", "45 m/sec"],
+        ["50", "50 m/sec"],
+    ];
+    numberSpuriousVLimit.fill(numberSpuriousVLimitValues);
+
+
     parentEl = document.getElementById('holderCompassHeadingVisible');
     var selectCompassHeadingVisible = ctrls.NewYesNoControl(parentEl, null, 'Show Compass on Map?', -1);
 
@@ -3257,6 +3199,8 @@ function wigo_ws_View() {
             return false;
         if (!IsSelectCtrlOk2(numberPrevGeoLocThresMeters))
             return false;
+        if (!IsSelectCtrlOk2(numberSpuriousVLimit)) 
+            return false;
         if (!IsYesNoCtrlOk(selectClickForGeoLoc))  
             return false;
 
@@ -3299,6 +3243,7 @@ function wigo_ws_View() {
         settings.bPebbleAlert = selectPebbleAlert.getState() === 1;
         settings.countPebbleVibe = parseInt(numberPebbleVibeCount.getSelectedValue());
         settings.dPrevGeoLocThres = parseFloat(numberPrevGeoLocThresMeters.getSelectedValue());
+        settings.dSpuriousVLimit = parseFloat(numberSpuriousVLimit.getSelectedValue()); 
         settings.bCompassHeadingVisible = selectCompassHeadingVisible.getState() === 1; 
         settings.bClickForGeoLoc = selectClickForGeoLoc.getState() === 1;
         settings.gptHomeAreaSW.lat = numberHomeAreaSWLat.value;
@@ -3336,6 +3281,7 @@ function wigo_ws_View() {
         selectPebbleAlert.setState(settings.bPebbleAlert ? 1 : 0);
         numberPebbleVibeCount.setSelected(settings.countPebbleVibe.toFixed(0));
         numberPrevGeoLocThresMeters.setSelected(settings.dPrevGeoLocThres.toFixed(0));
+        numberSpuriousVLimit.setSelected(settings.dSpuriousVLimit.toFixed(0)); 
         selectCompassHeadingVisible.setState(settings.bCompassHeadingVisible ? 1 : 0); 
         selectClickForGeoLoc.setState(settings.bClickForGeoLoc ? 1 : 0);
         numberHomeAreaSWLat.value = settings.gptHomeAreaSW.lat;
@@ -3355,6 +3301,8 @@ function wigo_ws_View() {
         // Clear tracking timer if it not on to ensure it is stopped.
         map.bIgnoreMapClick = !settings.bClickForGeoLoc;
         map.dPrevGeoLocThres = settings.dPrevGeoLocThres;
+        // Set VLimit for filtering spurious points in recorded trail.
+        map.recordPath.setVLimit(settings.dSpuriousVLimit); 
         // Testing mode for RecordFSM.
         recordFSM.setTesting(settings.bClickForGeoLoc);   
 
