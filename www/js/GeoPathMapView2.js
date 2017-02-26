@@ -174,6 +174,14 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
         this.PanToPathCenter();
     };
 
+    // Not Used. Does not seem to be useful.
+    // // Redraw the map.
+    // this.Redraw = function() { 
+    //     if (tileLayer) {
+    //         tileLayer.redraw(); 
+    //     }
+    // };
+
     // Fits map to bounds of path.
     // Arg:
     //  path: wigo_ws_GpxPath object for the path.
@@ -660,7 +668,6 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
     // Distance in meters for changing previous geolocation wrt current geolocation.
     // Note: Parameter for updating prevGeoLocCircle when current location changes.
     this.dPrevGeoLocThres = 10.0;
-
 
     // Object for drawing and managing a path for recording separately and independently
     // of the main path on the map.
@@ -2245,18 +2252,27 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
         //  tStart: Date obj. Date and time for start of the record path. 
         //          null if there is no valid RecordPt of kind eRecordPt.RECORD in the record path.
         //          bOk is false if tStart is null.
+        //  kJoules: number. kinetic engery for body traveling for the recorded path. 
+        //            Note: var kgMass is body mass.
+        //  calories: number. food calories on a product label corresponding to kJoules. 
         this.getStats = function() {
-            var result = {bOk: false, dTotal: 0,  msRecordTime: 0, msElapsedTime: 0, tStart: null};
+            var result = {bOk: false, dTotal: 0,  msRecordTime: 0, msElapsedTime: 0, tStart: null, kJoules: 0, calories: 0};
             if (!IsMapLoaded())
                 return result; // Quit if map has not been loaded.
             
             var d=0; // Distance to previous RECORD point.
             var dt;  // Distance and time to previous record point.
             var pt;  // Current point in arRecordPt while looping thru arRecordPt.
-            for (var i=0; i < arRecordPt.length; i++) {
+            var vCur = 0;  // Current velocity in m/sec;  
+            var vv = 0; // Change in velocity squared from previous point to current point.
+            var vvPrev = 0; // Previous velocity squared in m/sec. 
+            var vvSum = 0; // sum of velocity squared for points over recorded path. 
+            var epsilon = 0.0001; // Small value to avoid divide by 0.
+            for (var i=0; i < arRecordPt.length; i++) { 
                 pt = arRecordPt[i]; 
-                if (pt.bDeleted) // Ignore points marked as deleted. 
+                if (pt.bDeleted) { // Ignore points marked as deleted. 
                     continue;
+                }
                 switch (pt.kind) {
                     case this.eRecordPt.RECORD:
                         // Get distance and time deltas to previous RECORD point.
@@ -2267,6 +2283,15 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
                         // Set date and time for start of the recording.
                         if (result.tStart === null) 
                             result.tStart = new Date(pt.msTimeStamp);
+                        // Calc v*2 for kinetic energy.
+                        if (dt.msRecordDelta > epsilon) {
+                            vCur = dt.d / (dt.msRecordDelta/1000);
+                            vv = vCur*vCur - vvPrev;
+                            if (vv < 0)
+                                vv = -vv;
+                            vvSum +=vv;
+                            vvPrev = vv;
+                        }
                         break;
                     case this.eRecordPt.PAUSE:
                         break;
@@ -2275,6 +2300,10 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
                 }
             }
             // Note: PAUSE and RESUME points after last RECORD point are ignored.
+            // Set result for total kinetic energy for body traveling the recorded path. 
+            result.kJoules = (vvSum*kgMass/2.0)/1000.0;
+            // Set result for food calories corresponding to result.kJoules.   
+            result.calories = KJoulesToLabelCalories(result.kJoules);
 
             result.bOk = result.tStart !== null ? true : false;
             return result;
@@ -2297,17 +2326,15 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
             // Note: ok to call if spurious cluster is empty.
             //       Also for deletion of spurious cluster, if valid cluster is only one point, 
             //       the valid cluster is deleted because it was suspected to be spurious. 
-            function DeleteSpuriousCluster(curPt) { 
+            function DeleteSpuriousCluster() { 
                 if (arSpuriousClusterIx.length > 0) {
                     // Delete any points in spurious cluster and empty spurious cluster.
                     var ptSpurious, v;
-                    for (var i=0; curPt && i < arSpuriousClusterIx.length; i++) {
+                    for (var i=0; i < arSpuriousClusterIx.length; i++) {
                         ptSpurious = arRecordPt[arSpuriousClusterIx[i]];
-                        v = curPt.v(ptSpurious);
-                        if ( v >= vLimit) {
-                            ptSpurious.bDeleted = true;
-                            result.nDeleted++; 
-                        }
+                        // Note: do not check for velocity limit from curPt to ptSpurious.
+                        ptSpurious.bDeleted = true;
+                        result.nDeleted++; 
                     }
                     // Check if small valid cluster has suspect points that need to be deleted.
                     if (arValidClusterIx.length <= minValidClusterCt) {
@@ -2335,7 +2362,6 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
             if (!this.isFilterEnabled())  
                 return result;            
             var pt, v; // current point in loop and its velocity.   
-            var curRecordPt = null; // current RecordPt of kind = eRecordPt.RECRORD. 
             var maxSpuriousClusterCt = 2;  // Maximum number of consecutive points in a spurious cluster. 
             var arSpuriousClusterIx = [];  // Array of indices of in a spurious points cluster.
             var minValidClusterCt = 2;     // Minimum number of points in cluster for cluster to be considered valid.
@@ -2359,12 +2385,11 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
                     continue;
                 }
                 result.bValid = true; // Indicate path can be filtered.
-                curRecordPt = pt;     // current RecordPt of kind == eRecordPt.RECORD.
                 v = pt.v(prevPt);
                 if (v < vLimit)  { 
                     // pt is valid, not spurious.
                     // Delete any points in spurious cluster and empty spurious cluster.
-                    DeleteSpuriousCluster(curRecordPt);   
+                    DeleteSpuriousCluster();   
                     // Append valid point to valid cluster.
                     arValidClusterIx.push(iPt);
                     // Set previous valid point to current point.
@@ -2405,7 +2430,7 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
                 }           
             }
             // Delete any points in spurious cluster and empty spurious cluster. 
-            DeleteSpuriousCluster(curRecordPt); 
+            DeleteSpuriousCluster(); 
 
             // Set pathCoords to match RECORD points that are not deleted.
             if (result.bValid && result.nDeleted > 0) {
@@ -2552,6 +2577,13 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
             return vLimit;
         };
 
+        // Sets body mass in kilograms.
+        // Arg: 
+        //  mass: number. body mass in kilograms.
+        this.setBodyMass = function(mass) {  
+            kgMass = mass;
+        };
+
         // Set pathCoords to match RECORD points that are not deleted in arRecordPt.
         function SetPathCoords() {
             // Set pathCoords to match RECORD points that are not deleted.
@@ -2571,9 +2603,22 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
             return vLimit > 0;  
         }
 
+        // Returns float for number of food calories listed on a product label for 
+        // metabolized energy due to respiration.
+        // Arg:
+        //  kJoules: float. number of kilojoules of engery to be produced from food.
+        function KJoulesToLabelCalories(kJoules) {
+            var cals = 4.184 * kJoules;
+            // Note: I think the food label takes into account the typical 0.85 metabolic effiency.
+            // therefore cals is not divided by 0.85. 
+            return cals; 
+        }
+
         var vLimit = 100 * 1000 / (60 * 60);  // Limit for velocity of pt to be valid. // x km/hour to m/sec.
         var bFilterEnabled = false;   // Filter is enabled. this.filter() can run.      
         var bUnfilterEnabled = false; // Unfilter is enabled. this.unfilter() can run.  
+        var kgMass = 77.0; // Body mass in kilograms.
+        
     }
     
 }

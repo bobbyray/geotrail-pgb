@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Work on RecordingTrail2 branch. Filter spurious record points.
-    var sVersion = "1.1.024_20170216_1705"; // Constant string for App version.
+    var sVersion = "1.1.024"; // Constant string for App version.
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -649,6 +649,10 @@ function wigo_ws_View() {
     var divMode = document.getElementById('divMode');
 
     var divSettings = $('#divSettings')[0];
+    var divSettingsTitle = $('#divSettingsTitle')[0];   
+    var divSettingsScroll = $('#divSettingsScroll')[0]; 
+    var divSettingsDoneCancel = $('#divSettingsDoneCancel')[0]; 
+
     var numberHomeAreaSWLat = $('#numberHomeAreaSWLat')[0];
     var numberHomeAreaSWLon = $('#numberHomeAreaSWLon')[0];
     var numberHomeAreaNELat = $('#numberHomeAreaNELat')[0];
@@ -812,7 +816,7 @@ function wigo_ws_View() {
 
     $(buSettingsDone).bind('click', function (e) {
         if (CheckSettingsValues()) { 
-            ShowSettingsDiv(false);
+            ShowSettingsDiv(false); 
             that.ClearStatus();
             var settings = GetSettingsValues();
             SetSettingsParams(settings, false); // false => not initially setting when app is loaded. 
@@ -2349,6 +2353,8 @@ function wigo_ws_View() {
                     // Elapsed time does not seem useful, probably confusing.
                     // s = "Elapsed Time: {0}<br/>".format(TimeInterval(stats.msElapsedTime));
                     // sMsg += s;
+                    s = "Calories: {0}<br/>".format(stats.calories.toFixed(0));
+                    sMsg += s;
                     view.ShowStatus(sMsg, false);
                 } else {
                     view.ShowStatus("Failed to calculate stats!");
@@ -2999,13 +3005,17 @@ function wigo_ws_View() {
     numberOffPathUpdateMeters.fill(numberOffPathUpdateMetersValues);
 
     parentEl = document.getElementById('holderDistanceUnits');  
-    var distanceUnits = new ctrls.DropDownControl(parentEl, null, 'Distance Units', '',  'img/ws.wigo.dropdownhorizontalicon.png');
+    var distanceUnits = new ctrls.DropDownControl(parentEl, null, 'Measuring System', '',  'img/ws.wigo.dropdownhorizontalicon.png');
     var distanceUnitsValues = 
     [
         ['metric', 'Metric'],
         ['english', 'English']
     ];
     distanceUnits.fill(distanceUnitsValues);
+    distanceUnits.onListElClicked = function(dataValue) { 
+        bodyMass.bMetric = dataValue === 'metric';
+        bodyMass.show();
+    }
 
 
     parentEl = document.getElementById('holderPhoneAlert');
@@ -3072,24 +3082,24 @@ function wigo_ws_View() {
     ];
     numberPrevGeoLocThresMeters.fill(numberPrevGeoLocThresMetersValues);
 
-    parentEl = document.getElementById('holderSpuriouVLimit'); 
+    parentEl = document.getElementById('holderSpuriousVLimit'); 
     var numberSpuriousVLimit = new ctrls.DropDownControl(parentEl, null, 'Spurious V Limit', '', 'img/ws.wigo.dropdownhorizontalicon.png');
     var numberSpuriousVLimitValues = 
     [
-        ["1", " 1 m/sec"],
-        ["2", " 2 m/sec"],
-        ["3", " 3 m/sec"],
-        ["4", " 4 m/sec"],
-        ["5", " 5 m/sec"],
-        ["10", "10 m/sec"],
-        ["15", "15 m/sec"],
-        ["20", "20 m/sec"],
-        ["25", "25 m/sec"],
-        ["30", "30 m/sec"],
-        ["35", "35 m/sec"],
-        ["40", "40 m/sec"],
-        ["45", "45 m/sec"],
-        ["50", "50 m/sec"],
+        ["1",  " 1 meter/sec  (  2.2 mph)"],
+        ["2",  " 2 meters/sec (  4.5 mph)"],
+        ["3",  " 3 meters/sec (  6.7 mph)"],
+        ["4",  " 4 meters/sec (  8.9 mph)"],
+        ["5",  " 5 meters/sec ( 11.2 mph)"],
+        ["10", "10 meters/sec ( 22.4 mph)"],
+        ["15", "15 meters/sec ( 33.6 mph)"],
+        ["20", "20 meters/sec ( 44.7 mph)"],
+        ["25", "25 meters/sec ( 55.9 mph)"],
+        ["30", "30 meters/sec ( 67.1 mph)"],
+        ["35", "35 meters/sec ( 78.2 mph)"],
+        ["40", "40 meters/sec ( 89.5 mph)"],
+        ["45", "45 meters/sec (100.7 mph)"],
+        ["50", "50 meters/sec (111.8 mph)"],
     ];
     numberSpuriousVLimit.fill(numberSpuriousVLimitValues);
 
@@ -3099,6 +3109,98 @@ function wigo_ws_View() {
 
     parentEl = document.getElementById('holderClickForGeoLoc');
     var selectClickForGeoLoc = ctrls.NewYesNoControl(parentEl, null, 'Touch for Loc Testing?', -1);
+
+    var numberBodyMass = document.getElementById('numberBodyMass'); 
+    var labelBodyMass = document.getElementById('labelBodyMass');
+    
+    // Composite control for Body Mass.
+    var bodyMass = new BodyMassCtrl(labelBodyMass, numberBodyMass);
+    // Object for composite HMTLElemeent control for UI to enter body mass.
+    // Constructor args:
+    //  labelMass: ref to html Element. Control for label indicating kilograms or pound.
+    //  numberMass: ref to HTMLInputElement of type='number'. UI for entering a number. 
+    function BodyMassCtrl(labelMass, numberMass) {
+        var that = this; // ref to this for private functions to use.
+        // boolean Indicates if metric or english units are displayed.
+        // For true, displayed value is in kilograms. For false displayed value in pounds.
+        this.bMetric = false; 
+
+        // Sets data-mass attribute.
+        // Arg:
+        //  kgMass: number. data-mass attribute value in kilograms.
+        this.setMass = function(kgMass) {
+            numberMass.setAttribute('data-mass', kgMass);
+        };
+
+        // Returns the data-mass attribute as a number in kgs.
+        // Returns Number.NaN if data-mass attribute is invalid.
+        this.getMass = function() {
+            var sMass = numberMass.getAttribute('data-mass');
+            var nMass = Number(sMass);
+            return nMass; 
+        }
+
+        // Show number value and label text.
+        // For this.bMetric is true:
+        //  label is: Body Mass (kgs).
+        //  number is: data-mass in kgs.
+        // For this.bMetric false:
+        //  label is: Body Weight (lbs).
+        //  number is: data-mass in lbs.
+        // Returns true if data-mass is valid, in which case 
+        //  the number value and label text are updated.
+        //  If false is return, display is not changed. 
+        this.show = function() {
+            var sMass = numberMass.getAttribute('data-mass');
+            var nMass = Number(sMass);
+            var bOk = nMass != Number.NaN;
+            if (bOk) {
+                if (this.bMetric) {
+                    sMass = nMass.toFixed(1);
+                    labelMass.innerHTML = this.labelTextKgs;
+                } else {
+                    // Convert kgs to lbs.
+                    var nLbs = nMass * 2.2046;
+                    sMass = nLbs.toFixed(1);
+                    labelMass.innerHTML = this.labelTextLbs;
+                }
+                numberMass.value = sMass;
+            }
+            return bOk;
+        };
+
+        // Text for label when showing mass in kilograms.
+        this.labelTextKgs = 'Body Mass (kgs)';
+
+        // Text for label when showing mass in pounds.
+        this.labelTextLbs = 'Body Weight (lbs)'; 
+
+        // Event handler for change of value numberBodyMass control.
+        numberBodyMass.addEventListener('change', function(event){
+            SetMassFromValue();
+            that.show();  // Show to see decimal point.
+        }, false);
+
+        // Sets data-mass attribute based on value of numberMass and this.bMetric.
+        // For this.bMetric false converts displayed numberMass value from pounds to kilograms.
+        // For this.bMetric true, uses displayed numberMass value as is since it is in kilograms.
+        // Returns true if value of numberMass control is a valid number.
+        // Note: Does not change numberMass value of labelMass text (does change display).
+        function SetMassFromValue() {
+            var nValue = Number(numberMass.value);
+            var bOk = nValue !== Number.NaN;
+            if (bOk) {
+                if (!that.bMetric) {
+                    // Convert pounds to kilograms.
+                    nValue = nValue / 2.2046; 
+                }
+                var sMass = nValue.toFixed(4);
+                numberMass.setAttribute('data-mass', sMass)
+            }
+            return bOk;
+        };
+    }
+
 
     // ** Helper for Settings
 
@@ -3243,7 +3345,8 @@ function wigo_ws_View() {
         settings.bPebbleAlert = selectPebbleAlert.getState() === 1;
         settings.countPebbleVibe = parseInt(numberPebbleVibeCount.getSelectedValue());
         settings.dPrevGeoLocThres = parseFloat(numberPrevGeoLocThresMeters.getSelectedValue());
-        settings.dSpuriousVLimit = parseFloat(numberSpuriousVLimit.getSelectedValue()); 
+        settings.vSpuriousVLimit = parseFloat(numberSpuriousVLimit.getSelectedValue()); 
+        settings.kgBodyMass = bodyMass.getMass(); 
         settings.bCompassHeadingVisible = selectCompassHeadingVisible.getState() === 1; 
         settings.bClickForGeoLoc = selectClickForGeoLoc.getState() === 1;
         settings.gptHomeAreaSW.lat = numberHomeAreaSWLat.value;
@@ -3281,7 +3384,12 @@ function wigo_ws_View() {
         selectPebbleAlert.setState(settings.bPebbleAlert ? 1 : 0);
         numberPebbleVibeCount.setSelected(settings.countPebbleVibe.toFixed(0));
         numberPrevGeoLocThresMeters.setSelected(settings.dPrevGeoLocThres.toFixed(0));
-        numberSpuriousVLimit.setSelected(settings.dSpuriousVLimit.toFixed(0)); 
+        numberSpuriousVLimit.setSelected(settings.vSpuriousVLimit.toFixed(0)); 
+        
+        bodyMass.bMetric = settings.distanceUnits == 'metric'; 
+        bodyMass.setMass(settings.kgBodyMass); 
+        bodyMass.show();
+
         selectCompassHeadingVisible.setState(settings.bCompassHeadingVisible ? 1 : 0); 
         selectClickForGeoLoc.setState(settings.bClickForGeoLoc ? 1 : 0);
         numberHomeAreaSWLat.value = settings.gptHomeAreaSW.lat;
@@ -3302,7 +3410,9 @@ function wigo_ws_View() {
         map.bIgnoreMapClick = !settings.bClickForGeoLoc;
         map.dPrevGeoLocThres = settings.dPrevGeoLocThres;
         // Set VLimit for filtering spurious points in recorded trail.
-        map.recordPath.setVLimit(settings.dSpuriousVLimit); 
+        map.recordPath.setVLimit(settings.vSpuriousVLimit); 
+        // Set body mass. (Used to calculate calories for a recorded path.)
+        map.recordPath.setBodyMass(settings.kgBodyMass);  
         // Testing mode for RecordFSM.
         recordFSM.setTesting(settings.bClickForGeoLoc);   
 
@@ -3375,16 +3485,21 @@ function wigo_ws_View() {
     function ShowSettingsDiv(bShow) {
         if (app.deviceDetails.isiPhone()) { 
             // Do not show settings for tracking nor Pebble.
-            //???? ShowElement(holderAllowGeoTracking, false);
-            //???? ShowElement(holderEnableGeoTracking, false);
-            //???? ShowElement(holderGeoTrackingSecs, false);
             ShowElement(holderPebbleAlert, false);
             ShowElement(holderPebbleVibeCount, false);
         }
 
         var sShowSettings = bShow ? 'block' : 'none';
         divSettings.style.display = sShowSettings;
-        ShowMapCanvas(!bShow); 
+
+        if (bShow) { 
+            // Set height of divSettingsScroll to fill available space.
+            var yBody = document.body.offsetHeight;
+            var yScrollTitle = divSettingsTitle.offsetHeight;
+            var yDoneCancel = divSettingsDoneCancel.offsetHeight;
+            var yScroll =  yBody - yScrollTitle - yDoneCancel;
+            divSettingsScroll.style.height = yScroll.toFixed(0) + 'px';
+        }
     }
 
     function ShowHelpDiv(div, bShow) {
@@ -4548,7 +4663,7 @@ function wigo_ws_View() {
 
     // ** Select Mode dropdown ctrl.
     parentEl = document.getElementById('selectMode');
-    var selectMode = new ctrls.DropDownControl(parentEl, "selectMenuDropDown", "View", null, "img/ws.wigo.dropdownicon.png");
+    var selectMode = new ctrls.DropDownControl(parentEl, "selectModeDropDown", "View", null, "img/ws.wigo.dropdownicon.png");
     var selectModeValues = [['select_mode', 'Sign-in/off'],   
                             ['online_view',   'Online'],        
                             ['offline',       'Offline'],       
@@ -5273,7 +5388,7 @@ function wigo_ws_Controller() {
         // Appends to path list and shows status message.
         function AppendToPathList (bOk, gpxList, sStatus) {
             if (bOk) {
-                for (var i = 0; gpxList && i < gpxList.length; i++) { 
+                for (var i = 0; gpxArray && gpxList && i < gpxList.length; i++) { // Added check for gpxArray not null. Saw it happen in debug once.
                     arPath.push(gpxList[i].sName);
                     gpxArray.push(gpxList[i]);
                 }
