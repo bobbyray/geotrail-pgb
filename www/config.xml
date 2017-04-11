@@ -92,7 +92,8 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <preference name="StatusBarStyle" value="blacktranslucent" />        
 
         <!-- phone-gap version cli-6.3.0 fails to build. I think 6 or greater fails. -->
-        <preference name="phonegap-version" value="cli-5.4.1" />
+        <!-- 20170411 <preference name="phonegap-version" value="cli-5.4.1" /> -->
+        <!-- 20170411 try default version to see if cordova-plugin-network-information will work -->
     </platform>
     
     <!-- Move ios UIBackgroundModes under platform for ios -->
