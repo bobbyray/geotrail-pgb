@@ -30,15 +30,7 @@ function wigo_ws_NetworkInformation() {
     // Returns string describing current network state.
     // Note: Returns empty state is current network state is not defined.
     function GetTypeDescr() {
-        ////20170411 var networkState = navigator.connection.type;
-        var networkState;
-        // Note: cordova-plugin-network-informatiohn is not working for ios.
-        //       Therefore for iPhone always indicate cell connection.
-        if (window.app.deviceDetails.isiPhone()) 
-            networkState = Connection.CELL_4G;
-        else
-            networkState = navigator.connection.type;
-
+        var networkState = navigator.connection.type;
         var sNetworkType = states[networkState];
         if (typeof(sNetworkType) !== 'string') 
             sNetorkType = "";
