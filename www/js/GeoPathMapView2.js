@@ -2014,58 +2014,79 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
             } 
         } while (!bTileListDone)
 
-        
         message = "Preparing to cache tiles.\n" + "Zoom level " + zmin + " through " + zmax + "\n" + tile_list.length + " tiles total." + "\nClick OK to proceed.";
-        var ok = confirm(message);
-        if (!ok) {
-            status.bDone = true;
-            status.bCancel = true;
-            status.sMsg = "User canceled.";
-            if (onStatusUpdate)
-                onStatusUpdate(status);
-            return false;
-        }
-
-        tileLayer.downloadXYZList(
-            // 1st param: a list of XYZ objects indicating tiles to download
-            tile_list,
-            // 2nd param: overwrite existing tiles on disk? if no then a tile already on disk will be kept, which can be a big time saver
-            false,
-            // 3rd param: progress callback
-            // receives the number of tiles downloaded and the number of tiles total; caller can calculate a percentage, update progress bar, etc.
-            function (done, total) {
-                var percent = Math.round(100 * done / total);
-                status.sMsg = "Saving map tiles: " + done + " of " + total + " = " + percent + "%" +" ...";
-                if (onStatusUpdate)
-                    onStatusUpdate(status); 
+        var bConfirm = true; 
+        var sTitle = 'GeoTrail';
+        var sAnswer = 'OK,Cancel';
+        if (navigator.notification) {
+            // Show confirmation dialog which has async completion.
+            navigator.notification.confirm(message, function (iButton) {
+                // Async completion for user's response.
+                var bOk = iButton === 1;
+                bConfirm = OnDone(bOk);
             },
-            // 4th param: complete callback
-            // no parameters are given, but we know we're done!
-            function () {
-                // for this demo, on success we use another L.TileLayer.Cordova feature and show the disk usage
-                tileLayer.getDiskUsage(function (filecount, bytes) {
-                    var kilobytes = Math.round(bytes / 1024);
-                    status.sMsg = "Map caching completed, status" + "<br/>" + filecount + " files" + "<br/>" + kilobytes + " kB";
-                    status.bDone = true;
+            sTitle, sAnswer);
+        } else {
+            // Note: Should not happen because navigator.notification should be defined.
+            bConfirm = window.confirm(message);
+            OnDone(bConfirm);
+        }
+        return bConfirm; // Synchronous return. User confirms asynchronously if navigator.notitification.confirm() is called.
+
+        // Local helper called after user confirms or cancels.
+        function OnDone(ok) {
+            if (!ok) {
+                status.bDone = true;
+                status.bCancel = true;
+                status.sMsg = "User canceled.";
+                if (onStatusUpdate)
+                    onStatusUpdate(status);
+                return false;
+            }
+
+            tileLayer.downloadXYZList(
+                // 1st param: a list of XYZ objects indicating tiles to download
+                tile_list,
+                // 2nd param: overwrite existing tiles on disk? if no then a tile already on disk will be kept, which can be a big time saver
+                false,
+                // 3rd param: progress callback
+                // receives the number of tiles downloaded and the number of tiles total; caller can calculate a percentage, update progress bar, etc.
+                function (done, total) {
+                    var percent = Math.round(100 * done / total);
+                    status.sMsg = "Saving map tiles: " + done + " of " + total + " = " + percent + "%" +" ...";
                     if (onStatusUpdate)
                         onStatusUpdate(status); 
-                });
-            },
-            // 5th param: error callback
-            // parameter is the error message string
-            function (error) {
-                status.sMsg = "Failed to cache map.<br/>Error code: " + error.code;
-                status.bDone = true;
-                status.bError = true;
-                if (onStatusUpdate)
-                    onStatusUpdate(status); 
-            }
-        );
-        status.sMsg = "Starting download of map tiles for caching.";
-        if (onStatusUpdate)
-            onStatusUpdate(status);
-        return true;
+                },
+                // 4th param: complete callback
+                // no parameters are given, but we know we're done!
+                function () {
+                    // for this demo, on success we use another L.TileLayer.Cordova feature and show the disk usage
+                    tileLayer.getDiskUsage(function (filecount, bytes) {
+                        var kilobytes = Math.round(bytes / 1024);
+                        status.sMsg = "Map caching completed, status" + "<br/>" + filecount + " files" + "<br/>" + kilobytes + " kB";
+                        status.bDone = true;
+                        if (onStatusUpdate)
+                            onStatusUpdate(status); 
+                    });
+                },
+                // 5th param: error callback
+                // parameter is the error message string
+                function (error) {
+                    status.sMsg = "Failed to cache map.<br/>Error code: " + error.code;
+                    status.bDone = true;
+                    status.bError = true;
+                    if (onStatusUpdate)
+                        onStatusUpdate(status); 
+                }
+            );
+            status.sMsg = "Starting download of map tiles for caching.";
+            if (onStatusUpdate)
+                onStatusUpdate(status);
+            return true;
+        }
     }
+
+
 
     // Object for drawing and managing a path for recording. 
     // The path for the recording is separate and indepedent of the path drawn for the map.

@@ -5575,14 +5575,7 @@ Are you sure you want to delete the maps?";
     fb.callbackAuthenticated = cbFbAuthenticationCompleted;
 
     // Object for network (internet) connection state.
-    var networkInfo;
-    if (window.app.deviceDetails.isiPhone()) {
-        // cordova-plugin-network-information is not working for ios. Hangs app at start up.
-        // Use dummy replacement for wigo_ws_NetworkInformation object that always indicates online.
-        networkInfo = {isOnline: function(){return this.isCellOnline() || this.isWiFiOnline();}, isCellOnline: function(){return true;}, isWiFiOnline: function(){return true;}};
-    } else {
-        networkInfo = new wigo_ws_NetworkInformation();
-    }
+    var networkInfo = wigo_ws_NewNetworkInformation(window.app.deviceDetails.isiPhone());
 }
 
 
