@@ -71,7 +71,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <plugin 
             name="pgb-facebook-connect"
             source="npm"
-            spec="12.0.0">
+            spec="0.12.0">
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </plugin>
