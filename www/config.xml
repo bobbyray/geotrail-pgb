@@ -59,13 +59,23 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
         -->
-
+        <!-- ////20170415 Did not help.
         <plugin 
             name="com.phonegap.plugins.facebookconnect"
             spec="https://github.com/Wizcorp/phonegap-facebook-plugin.git#0.9.0">
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </plugin>
+        -->       
+        
+        <plugin 
+            name="pgb-facebook-connect"
+            source="npm"
+            spec="0.9.0">
+            <param name="APP_ID" value=" 694318660701967" />
+            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
+        </plugin>
+        
         
 
         <!--  cordova-plugin-network-information is not working for ios.
