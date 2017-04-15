@@ -15,7 +15,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
     <author email="bob.schomburg@wigo.ws" href="http://cordova.io">
         WIGO Dev Team
     </author>
-    <!-- PhoneGAp Build seems to always used index.html for content 
+    <!-- PhoneGap Build seems to always used index.html for content 
     <content src="Trail2.html" />
     -->
     <access origin="*" />
@@ -61,8 +61,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         -->
 
         <plugin 
-            name="com.phonegap.plugins.facebookconnect"
-            spec="https://github.com/Wizcorp/phonegap-facebook-plugin.git#0.9.0" >
+            spec="https://github.com/Wizcorp/phonegap-facebook-plugin.git#0.9.0">
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </plugin>
