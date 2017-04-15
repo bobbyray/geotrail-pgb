@@ -52,11 +52,21 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" />
         -->
         
+        <!-- ////20170415 build started to fail
         <gap:plugin 
             src="https://github.com/Wizcorp/phonegap-facebook-plugin.git#0.9.0" >
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
+        -->
+
+        <plugin 
+            name="com.phonegap.plugins.facebookconnect"
+            spec="https://github.com/Wizcorp/phonegap-facebook-plugin.git#0.9.0" >
+            <param name="APP_ID" value=" 694318660701967" />
+            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
+        </plugin>
+        
 
         <!--  cordova-plugin-network-information is not working for ios.
         <plugin name="cordova-plugin-network-information" source="npm" spec="1.3.2" />         
