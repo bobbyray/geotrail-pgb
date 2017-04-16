@@ -77,12 +77,13 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </plugin>
         -->
-
+        <!-- ////20170416 Did not work at all, name of plugin not known.
         <gap:plugin 
             name="com.phonegap.plugins.facebookconnect" version="0.9.0">
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
+        -->
         
 
         <!--  cordova-plugin-network-information is not working for ios.
@@ -97,6 +98,14 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
         --> 
+        <!-- 20170416 Try original way that used to work again. -->
+        <gap:plugin 
+            src="https://github.com/Wizcorp/phonegap-facebook-plugin.git#0.9.0" >
+            <param name="APP_ID" value=" 694318660701967" />
+            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
+        </gap:plugin>
+
+        
         
         <!-- //20161121 waketimer not used because cannot get app to run in background 
         <plugin spec="https://github.com/wnyc/cordova-plugin-wakeuptimer.git#1.0.1" source="git"/>
