@@ -39,6 +39,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
     <script src="js/jquery-1.11.3.js"></script>
     <script src="js/ws.wigo.networkinfo.js"></script>
     <script src="js/Model2.js"></script>
+    <script src="js/oms.min.js"></script>  
     <script src="js/GeoPathMapView2.js"></script>
     <script charset="utf-8" src="js/PebbleAdapter.js"></script> 
     <script src="jsAuthCordova/FbAuthentication2.js"></script>
@@ -269,13 +270,18 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         </ul>
         <h2 id="helpOnlineMap">Online Map</h2>
         You can find trails that have been saved online by you or others. The trails you find are in the Trails droplist
-        from which you select a trail to view. Your current geolocation on the trail is shown 
+        from which you select a trail to view. 
+        Also you can select a trail by touching a blue marker on the map that indicates where a trail is. If the markers overlap, 
+        touching causes the markers to spread apart so you can select one individually. Touching a marker shows a pop-up
+        that shows the trail name and length of the trail. Touch the View Trail button on the pop-up to show the trail on the map.
+        <p>Your current geolocation on the trail is shown 
         and you can be alerted if you are off trail. When you are off trail, instructions for returning to the trail
         are shown. The beginning of the trail is indicated by a short green line and the end by a short red line. 
-        Also automatic tracking can be enabled to determine if you are off trail.
+        Also automatic tracking can be enabled to determine if you are off trail.</p>
         <h3>Trails DropList</h3>
         <p>Select a trail from the web that others have made public and ones
         that are private to you.</p>
+        <p>Touch the Select a Geo Trail item at the top of the droplist to show the blue markers for trails on the map.
         <h3>Save Offline Button</h3>
         <p>Touch the Save Offline button to save a trail you are viewing so that you can
         view it when you are offline. (See <a href="#helpOfflineMap">Offline Map</a> below.)</p>
@@ -726,6 +732,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <li>cordova-plugin-whitelist 1.2.2 "Whitelist"</li>
         <li>org.nypr.cordova.wakeupplugin 0.1.0 "WakeupTimer"</li>
         <li>cordova-plugin-network-information 1.3.2 "Network Information"</li>
+        <li>github.com/jawj/OverlappingMarkerSpiderfier-Leaflet, May 10, 2016</li>
         </ul>
         <br/> <!-- space for the Close diaglog bar to overlay -->
     </div>
@@ -752,6 +759,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <li>cordova-plugin-statusbar npm v2.2.0</li>
         <li>cordova-plugin-vibration npm v1.2.0</li>
         <li>org.apache.cordova.device-orientation npm v0.3.11</li>
+        <li>github.com/jawj/OverlappingMarkerSpiderfier-Leaflet, May 10, 2016</li>
         </ul>
         <br/> <!-- space for the Close diaglog bar to overlay -->
     </div>
