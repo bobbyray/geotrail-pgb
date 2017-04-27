@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Work on RecordingTrail2 branch. Filter spurious record points.
-    var sVersion = "1.1.025_20170417"; // Constant string for App version.
+    var sVersion = "1.1.025_20170427"; // Constant string for App version.
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -869,7 +869,7 @@ function wigo_ws_View() {
             if (offlineLocalData.isDefiningTrailName()) 
                 that.ShowStatus("Select Local Data > Upload to complete uploading.", false);
         }
-    }, false);
+    }, false); 
 
     txbxPathName.addEventListener('keydown', function(event){
         function IsTextEmpty() {
@@ -877,8 +877,12 @@ function wigo_ws_View() {
             return text.length === 0;
         }
 
+        // Remove any single quote char or double quote char with notifying user.
+        // A single quote or double quote in the path name in an object posted
+        // to a server causes a transfer error. 
+
+        var bEnterKey = IsEnterKey(event);
         if (that.curMode() === that.eMode.offline) {
-            var bEnterKey = IsEnterKey(event);
             if (bEnterKey && recordFSM.isDefiningTrailName())  {
                 if (!IsTextEmpty()) {
                     // Save recorded trail locally.
@@ -901,7 +905,7 @@ function wigo_ws_View() {
                 event.target.blur();
             }
         }
-    }, false);
+    }, false); // Try true to use capture instead of bubble. true does not capture.
 
     // Returns true if an keyboad event is for the Enter key.
     // Arg:
@@ -920,7 +924,6 @@ function wigo_ws_View() {
         }
         return bYes;
     }
-
 
     var labelPathName = document.getElementById('labelPathName');
 
@@ -2644,6 +2647,7 @@ function wigo_ws_View() {
                 ShowPathDescrBar(true); 
                 if (bOnline)               
                     signin.showIfNeedBe(); 
+                txbxPathName.focus();  // Set focus to textbox so keyboard is presented. 
             };
 
             this.nextState = function(event) {
