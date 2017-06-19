@@ -68,9 +68,7 @@ function wigo_ws_NewNetworkInformation(bIos) {
         bIos = false;
     var networkInfo;
     if (bIos) {
-        ////20170619 networkInfo = {isOnline: function(){return this.isCellOnline() || this.isWiFiOnline();}, isCellOnline: function(){return true;}, isWiFiOnline: function(){return true;}};
-        // 20170619 Network Information works for iPhone now.
-        networkInfo = new wigo_ws_NetworkInformation(); 
+        networkInfo = {isOnline: function(){return this.isCellOnline() || this.isWiFiOnline();}, isCellOnline: function(){return true;}, isWiFiOnline: function(){return true;}};
     } else { 
         networkInfo = new wigo_ws_NetworkInformation(); 
     }
