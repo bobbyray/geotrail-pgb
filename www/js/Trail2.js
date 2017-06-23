@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Work on RecordingTrail2 branch. Filter spurious record points.
-    var sVersion = "1.1.026_20170618e"; // Constant string for App version. 
+    var sVersion = "1.1.027_20170622"; // Constant string for App version. 
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -125,15 +125,6 @@ function wigo_ws_View() {
     //  iPathList: number. index to array of data for the paths. 
     //  Returns: wigo_ws_GpxPath obj. Data for path. null if iPathList is invalid.
     this.onGetPath = function(nMode, iPathList) { return null}; 
-
-    // Returns geo path upload data for data index from item in the selection list.
-    // Handler signature:
-    //  nMode: byte value of this.eMode enumeration.
-    //  nIx: integer for data index from item in selection list control. 
-    //  Returned object: defined by this.NewUploadPathObj().
-    //                   null if nIx is out of range.
-    // Note: the return is synchronous.
-    this.onGetUploadPath = function (nMode, nIx) {return null};  
 
     //  Creates and returns {nId: int, sPathName: string, sOwnerId: string, sShare: int, arGeoPt: array}:
     //      nId: integer for path record id. 0 indicates new path.
@@ -229,7 +220,7 @@ function wigo_ws_View() {
         // Helper to complete initialization after map has been initialized.
         function CompleteInitialization(bOk, sMsg) {
             that.ShowStatus(sMsg, !bOk)
-            if (bOk) { ////20170617 added if cond only, body already existed.
+            if (bOk) { 
                 var settings = that.onGetSettings();
                 SetSettingsParams(settings);
                 // Set view find paramters for search for geo paths to the home area.
@@ -238,11 +229,17 @@ function wigo_ws_View() {
                 selectMode.setSelectedIndex(0);  
                 map.FitBounds(settings.gptHomeAreaSW, settings.gptHomeAreaNE);
 
-                if (!map.isOfflineDataEnabled()) {
-                    var sMsg = "Offline Maps cannot be used.\n" +
-                            "Check that permissions for this app in the device settings allow storage to be used.\n";
-                    alert(sMsg);
-                }
+                // if (!map.isOfflineDataEnabled()) {
+                //    var sMsg = "Offline Maps cannot be used.\n" +
+                //             "Check that permissions for this app in the device settings allow storage to be used.\n";
+                //    alert(sMsg);
+                //}
+                // Note: Testing map.isOfflineDataEnabled() is not reliable. 
+                //       An error is now detected if map caching by L.TileLayer fails to write to storage.
+                //       Handling the error shows a message to check app permissions for GeoTrail storage.
+                // Log message indicating if map initialized ok.  
+                var sLogMsg = "View Map: {0}, {1}".format(bOk ? "Ok" : "FAILED", sMsg);
+                console.log(sLogMsg); 
             }
         }
         
@@ -263,9 +260,6 @@ function wigo_ws_View() {
             });
         }
 
-        //// alert("Checking if Terms of Use accepted."); /* ////20170617 !!!! debug only */
-
-        //// //alert("Waiting to continue for debug.");   // comment out 
         var version = that.onGetVersion();
         if (!version)
             version = new wigo_ws_GeoTrailVersion();
@@ -278,7 +272,6 @@ function wigo_ws_View() {
         }
 
         if (version.bTermsOfUseAccepted) {
-            ////20170617 alert("Terms of Use Already accepted.") ////20170617 debug, remove !!!!
             DoInitialization();
         } else {
             ConfirmTermsOfUse(true, function(bConfirm) {
@@ -6085,31 +6078,6 @@ function wigo_ws_Controller() {
         return path;
     }
 
-    // Returns geo path upload data for data index from item in the selection list.
-    // Handler signature:
-    //  nMode: byte value of this.eMode enumeration.
-    //  nIx: integer for data index from item in selection list control. 
-    //  Returned object: NewUploadPathObj().
-    //                   null if nIx is out of range.
-    view.onGetUploadPath = function (nMode, nIx) { 
-        var uploadPath = null; 
-        if (nMode === view.eMode.online_view) {
-            if (gpxArray && nIx >= 0 && nIx < gpxArray.length) {
-                // Get the gpx data as it comes from the server.
-                var gpx = gpxArray[nIx]; // gpx is wigo_ws_Gpx object.
-                var gpxPath = model.ParseGpxXml(gpx.xmlData); // Parse the xml to get wigo_ws_GpxPath obj.
-                uploadPath = view.NewUploadPathObj();
-                uploadPath.nId = gpx.nId;
-                uploadPath.sOwnerId = gpx.sOwnerId;
-                uploadPath.sPathName = gpx.sName;
-                var eShare = model.eShare();
-                uploadPath.sShare = eShare.toStr(gpx.eShare);
-                uploadPath.arGeoPt = gpxPath.arGeoPt;
-            }
-        }        
-        return uploadPath;
-    };
-
     // Returns offline parameters item for an offline path.
     // Returned object: wigo_ws_GeoPathMap.OfflineParams.
     // Args:
@@ -6742,7 +6710,7 @@ Wigo_Ws_InitDeviceDetails(window.app.deviceDetails);
 // Try deviceready() handler instead.
 // Note: It seems HockeyApp works for distribution even if Cordova plugin 
 // for hockeyapp is not used. 
-document.addEventListener("deviceready", function() {
+document.addEventListener("deviceready", function(e) {
     //20161210 Initialize hockeyapp for distruction of app for ios.
     if (typeof(hockeyapp) !== 'undefined') {
         // hockeyapp.start(null, null, "296f229a3907490abd795f3a70760dea");
@@ -6760,10 +6728,8 @@ document.addEventListener("deviceready", function() {
         }, 
         "296f229a3907490abd795f3a70760dea",
         true); // true => autoSend crash report if one exists on start.
-    } else {
-        //debug alert('Device is ready.');
-        console.log('Device is ready.');
-    }
+    } 
+    console.log('Device is ready.');
 }, 
 false);
 
@@ -6780,4 +6746,4 @@ window.app.OnDocReady = function (e) {
 // that device does not support requestFileSystem.
 // Note: Occasionally still get error using $(window).load(..). Retry on 
 // error has been added and I think that will ensure the tile layer 
-$(window).load(window.app.OnDocReady);
+$(window).load(window.app.OnDocReady); 
