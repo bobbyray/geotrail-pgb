@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Work on RecordingTrail2 branch. Filter spurious record points.
-    var sVersion = "1.1.027_20170706-1240"; // Constant string for App version. 
+    var sVersion = "1.1.027_20170710-1549"; // Constant string for App version. 
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -3606,10 +3606,12 @@ function wigo_ws_View() {
     function DoGeoLocation() {
         // Show distance traveled if recording. 
         var sPrefixMsg = '';
+        var sPebblePrefixMsg = '';  
         if (!recordFSM.isOff()) {
             var mRecordDist = map.recordPath.getDistanceTraveled(true); 
             if (mRecordDist > 0.0001) {
                 sPrefixMsg = 'Distance traveled: {0}<br/>'.format(lc.to(mRecordDist));
+                sPebblePrefixMsg = 'Traveled: {0}<br/>'.format(lc.to(mRecordDist));  
             }
         }
         that.ShowStatus(sPrefixMsg + "Getting Geo Location ...", false); 
@@ -3617,7 +3619,7 @@ function wigo_ws_View() {
             if (positionError)
                 ShowGeoLocPositionError(positionError); 
             else 
-                ShowGeoLocUpdateStatus(updateResult, false, sPrefixMsg);  // false => no notification.
+                ShowGeoLocUpdateStatus(updateResult, false, sPrefixMsg, sPebblePrefixMsg);  // false => no notification. 
         });
     }
 
@@ -4007,12 +4009,9 @@ function wigo_ws_View() {
             }
         }, false);
 
-        
-        /* ////20170703 Not working for input of type number on Pixel????
         // Event handler for numberCtrl getting focus: 
         // Handler function selects text (digits) in the numberMass control.
         numberCtrl.addEventListener('focus', SelectNumberOnFocus, false); 
-        */
 
         var nDataDecimalPlaces = 4; 
     }
@@ -4180,17 +4179,20 @@ function wigo_ws_View() {
     //  event: FocusEvent. not currently used.
     // Note: this is for an html input element of type number.
     function SelectNumberOnFocus(event) { 
-        /* ////20170703 causing exception for input of type=number on Pixel. Check into this. Used to work.
         var iLast = this.value.length;
         var el = this;
         if (iLast >= 0) { 
             // Select all the text (digits) for edition.
             // Set selection after this ui thread ends, otherwise the selection is removed when soft keyboard appears.
             window.setTimeout(function(){
-                el.setSelectionRange(0, iLast); 
-            }, 0);    // Delay of 0 milliseconds means timer runs as soom as ui thread ends.
+                if (typeof el.type === 'string' ) {
+                    // HTML5 specifies that text selection can be done for type=text, but not number.
+                    el.type = 'text';
+                    el.setSelectionRange(0, iLast); 
+                    el.type = 'number';
+                }
+            }, 100);    // Delay of 0 milliseconds means timer runs as soom as ui thread ends. 0 probably works.
         }
-        */
     }    
 
     // Helper to check if setting calorie converion efficiency is active.
@@ -5441,7 +5443,7 @@ function wigo_ws_View() {
     //  bNotifyToo boolean, optional. true to indicate that a notification is given in addition to a beep 
     //             when an alert is issued because geolocation is off track. Defaults to false.
     //  sPrefixMsg string, optional. prefix message for update status msg. defaults to empty string.
-    function ShowGeoLocUpdateStatus(upd, bNotifyToo, sPrefixMsg) { 
+    function ShowGeoLocUpdateStatus(upd, bNotifyToo, sPrefixMsg, sPebblePrefixMsg) { 
         // Return msg for paths distances from start and to end for phone.
         function PathDistancesMsg(upd) {
             // Set count for number of elements in dFromStart or dToEnd arrays.
@@ -5496,7 +5498,9 @@ function wigo_ws_View() {
             return s;
         }
         if (typeof sPrefixMsg !== 'string') 
-            sPrefixMsg = '';              
+            sPrefixMsg = '';       
+        if (typeof sPebblePrefixMsg !== 'string')  
+            sPebblePrefixMsg = '';                   
         that.ClearStatus();
         if (!upd.bToPath) {
             if (map.IsPathDefined()) {
@@ -5505,7 +5509,7 @@ function wigo_ws_View() {
                 that.ShowStatus(sPrefixMsg + sMsg, false); // false => not an error. 
                 sMsg = "On Trail<br/>";
                 sMsg += PathDistancesPebbleMsg(upd);
-                pebbleMsg.Send(sMsg, false, trackTimer.bOn) // no vibration, timeout if tracking.
+                pebbleMsg.Send(sPebblePrefixMsg + sMsg, false, trackTimer.bOn) // no vibration, timeout if tracking. 
             } else {
                 // Show lat lng for the current location since there is no trail.
                 var sAt = "lat/lng({0},{1})<br/>".format(upd.loc.lat.toFixed(6), upd.loc.lng.toFixed(6));
@@ -5517,7 +5521,7 @@ function wigo_ws_View() {
                 if (upd.bCompass) {
                     sAt += "Cmps Hdg: {0}{1}\n".format(upd.bearingCompass.toFixed(0), sDegree);
                 }
-                pebbleMsg.Send(sAt, false, false); // no vibration, no timeout.
+                pebbleMsg.Send(sPebblePrefixMsg + sAt, false, false); // no vibration, no timeout.  
             }
         } else {
             // vars for off-path messages.
@@ -5571,7 +5575,7 @@ function wigo_ws_View() {
             }
             sMsg += "?P {0} {1}{2}\n".format(sTurn, phi.toFixed(0), sDegree);
             sMsg += PathDistancesPebbleMsg(upd); 
-            pebbleMsg.Send(sMsg, true, trackTimer.bOn); // vibration, timeout if tracking.
+            pebbleMsg.Send(sPebblePrefixMsg + sMsg, true, trackTimer.bOn); // vibration, timeout if tracking. 
         }
     }
 
@@ -5648,6 +5652,7 @@ function wigo_ws_View() {
         var sMsg = "Distance Alert: traveled {0}".format(sDist);
         alerter.DoAlert();
         that.ShowStatus(sMsg, false); 
+        pebbleMsg.Send(sMsg, true, false); // true => vibration, false not timeout check. 
     };
 
     // Returns true if divSettings container is hidden.
