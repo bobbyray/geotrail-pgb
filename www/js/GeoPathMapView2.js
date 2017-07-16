@@ -2330,47 +2330,43 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
             //  msElapsedDelta: elpased time delta in millisconds, including pauses.
             //  msRecordDelta: time delta in millisconds, excluding pauses and previous deleted points.
             this.dt = function() {
-                var d = 0;
-                var curPt = this;
-                var prevPt = null;
-                var msDelta = 0;         // Time from current point to previous point.
-                var msElapsedDelta = 0;  // Elapased time from this point of kind RECORD to previous RECORD point, inlcuding PAUSE.
-                var msRecordDelta = 0;   // Record time from this point of kind RECORD to previous RECORD point, excluding PAUSE.
+                var d = 0;                    // distance in meters from this pt to prevPt.
+                var prevPt = this.previous;   // previous RecordPt while looping thru all points.
+                var msElapsedDelta = 0;       // Elapased time from this pt to prevPt, inlcuding PAUSE.
+                var msRecordDelta = 0;        // Record time from this pt of kind RECORD to prevPt, excluding PAUSE.
+                
+                var bRecordDeltaValid = true;
                 // Calc distance from previous point skipping over PAUSE and RESUME point,
-                // where were saved to record timestamps.
-                while (curPt) {   
-                    prevPt = curPt.previous;
-                    if (prevPt) {
-                        // Skip a deleted previous point.
-                        if (prevPt.bDeleted) {
-                            curPt = prevPt;
-                            continue;
-                        } 
-                        msDelta = curPt.msTimeStamp - prevPt.msTimeStamp;
-                        msElapsedDelta += msDelta; 
-                        if (prevPt.kind === that.eRecordPt.RECORD) {
-                            if (this.kind === that.eRecordPt.RECORD)
-                                d = prevPt.ll.distanceTo(this.ll);
-                            if (curPt.kind === that.eRecordPt.RECORD || curPt.kind === that.eRecordPt.PAUSE)
-                                msRecordDelta += msDelta;
-                            if (curPt.kind === that.eRecordPt.RESUME) 
-                                msRecordDelta += msDelta;  // Should not happen.  
-                            // Quit when previous point of RECORD kind is found.
-                            break;
-                        } else if (prevPt.kind === that.eRecordPt.RESUME) {
-                            if (curPt.Kind === that.eRecordPt.RECORD)
-                                msRecordDelta += msDelta; 
-                        } else if (prevPt.kind === that.eRecordPt.PAUSE) {
-                            if (curPt.kind === that.eRecordPt.RECORD) 
-                                msRecordDelta += msDelta;  // Should not happen.
-                        }
+                // which were saved to record timestamps.
+                // Note: Return immediately if current point (this) is not a RECORD pt.
+                while (prevPt && this.kind === that.eRecordPt.RECORD && !this.bDeleted) {   
+                    // Skip a deleted previous point.
+                    if (prevPt.bDeleted) {
+                        // Ignore previously deleted pts.
+                        prevPt = prevPt.previous;  
+                        continue;
                     } 
-                    curPt = prevPt;
+                    msElapsedDelta = this.msTimeStamp - prevPt.msTimeStamp;
+                    if (prevPt.kind === that.eRecordPt.RECORD) {
+                        d = prevPt.ll.distanceTo(this.ll);
+                        if (bRecordDeltaValid) {
+                            msRecordDelta = msElapsedDelta;
+                        }
+                        // Quit when previous point of RECORD kind is found.
+                        break;
+                    } else if (prevPt.kind === that.eRecordPt.RESUME) {
+                        // Delta is not for a RECORD pt.
+                        bRecordDeltaValid = false;
+                    } else if (prevPt.kind === that.eRecordPt.PAUSE) {
+                        // Delta is not for a RECORD pt.
+                        bRecordDeltaValid = false;
+                    }
+                    prevPt = prevPt.previous;
                 }
                 var result = {d: d, msElapsedDelta: msElapsedDelta, msRecordDelta: msRecordDelta};
                 return result;
-
             }
+
 
             // Returns velocity in meters/sec from other RecordPt.
             // Returns -1 if other RecordPt is null or is not kind of eRecord.RECORD.
@@ -2563,8 +2559,10 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
                     case this.eRecordPt.RECORD:
                         // Get distance and time deltas to previous RECORD point.
                         dt = pt.dt();
-                        result.dTotal += dt.d;
-                        result.msRecordTime += dt.msRecordDelta;
+                        if (dt.msRecordDelta > epsilon) {
+                            result.dTotal += dt.d;
+                            result.msRecordTime += dt.msRecordDelta;
+                        }
                         result.msElapsedTime += dt.msElapsedDelta;
                         // Set date and time for start of the recording.
                         if (result.tStart === null) 
@@ -2596,7 +2594,7 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
             result.calories = KJoulesToLabelCalories(result.kJoules);
 
             // Calculate calories based on average velocity. 
-            if (result.msRecordTime > 0) {
+            if (result.msRecordTime > epsilon) {  
                 var aveV = result.dTotal / (result.msRecordTime/1000);
                 var kJoules = (aveV*aveV*kgMass/2.0) / 1000.0;
                 result.calories2 = KJoulesToLabelCalories(kJoules); 
