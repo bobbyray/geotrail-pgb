@@ -44,7 +44,9 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <plugin name="cordova-plugin-geolocation" source="npm" spec="2.4.0" />
 
         <plugin name="cordova-plugin-vibration" source="npm" spec="1.2.0" /> 
-        <plugin name="org.apache.cordova.device-orientation" spec="0.3.11" source="npm" />
+        <!-- ////20170728Old <plugin name="org.apache.cordova.device-orientation" spec="0.3.11" source="npm" /> -->
+        <plugin name="cordova-plugin-device-orientation" spec="1.0.7" source="npm" />
+        
         <plugin name="cordova-plugin-statusbar" spec="2.2.0" source="npm" />
         <plugin name="cordova-plugin-hockeyapp" spec="2.2.2" source="npm" />
 
