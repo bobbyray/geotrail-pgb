@@ -134,7 +134,9 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <!-- 20170411 <preference name="phonegap-version" value="cli-5.4.1" /> -->
         <!-- 20170411 try default version to see if cordova-plugin-network-information will work -->
         <!-- 20170411 <preference name="phonegap-version" value="cli-6.0.0" /> --> <!-- 20170411 try cli-6.0.0 ios 4.0.1 for network-information -->
-        <preference name="phonegap-version" value="cli-5.4.1" />
+        <!-- 20170728 <preference name="phonegap-version" value="cli-5.4.1" /> --> <!-- Need to update to cli-6.0.0 or above, also Facebook plugin problem -->
+        <preference name="phonegap-version" value="cli-6.5.0" />
+        
     </platform>
     
     <!-- Move ios UIBackgroundModes under platform for ios -->
