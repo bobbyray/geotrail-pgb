@@ -52,8 +52,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" />
         -->
 
-        <!-- ////21070728 pgb-facebook-connect -->
-        <gap:plugin source="npm" name="cordova-plugin-facebook4" spec="1.9.1" >
+        <gap:plugin source="npm" name="cordova-plugin-facebook4">
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
