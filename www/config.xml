@@ -54,7 +54,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
 
         <!-- ////21070728 pgb-facebook-connect -->
         
-        <gap:plugin src="npm" name="phonegap-facebook-plugin" spec="v0.12.0" >
+        <gap:plugin src="npm" name="phonegap-facebook-plugin-gtg" spec="0.12.0" >
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
