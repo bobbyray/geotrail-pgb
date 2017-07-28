@@ -52,12 +52,21 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" />
         -->
 
+        <!-- ////21070728 pgb-facebook-connect -->
+        
+        <gap:plugin src="npm" name="phonegap-facebook-plugin" version="0.12.0" >
+            <param name="APP_ID" value=" 694318660701967" />
+            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
+        </gap:plugin>
+        
+        
+        <-- ////20170728 try npm again.
         <gap:plugin 
             src="https://github.com/Wizcorp/phonegap-facebook-plugin#v0.12.0" >
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
-        
+        -->
         <!-- ////20170728 remove .git from src=
         <gap:plugin 
             src="https://github.com/Wizcorp/phonegap-facebook-plugin.git#0.12.0" >
