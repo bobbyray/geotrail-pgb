@@ -59,7 +59,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
         
-        <-- ////20170728 try npm again.
+        <!-- ////20170728 try npm again.
         <gap:plugin 
             src="https://github.com/Wizcorp/phonegap-facebook-plugin#v0.12.0" >
             <param name="APP_ID" value=" 694318660701967" />
