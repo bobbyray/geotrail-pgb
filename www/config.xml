@@ -31,11 +31,14 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <allow-intent href="market:*" />
     </platform>
     -->
+    
+    <icon src="icon.png" />  <!-- ////20170729 try simplest icon default.
+    
     <!-- ////20170729 put icon under platform section, stopped working.
     <icon platform="ios" src="res/android/geotrail512x512.png" />
     -->
     <platform name="ios">
-        <icon src="res/android/geotrail512x512.png" />
+        <!-- ////20170729DidNotWork <icon src="res/android/geotrail512x512.png" /> -->
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
         <plugin name="cordova-plugin-dialogs" source="npm" spec="1.1.1" />     
