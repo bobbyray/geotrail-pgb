@@ -38,7 +38,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
     <icon platform="ios" src="res/android/geotrail512x512.png" />
     -->
     <platform name="ios">
-        <!-- ////20170729DidNotWork <icon src="res/android/geotrail512x512.png" /> -->
+        <!-- ////20170729DidNotWork <icon src="res/android/geotrail512x512.png" spec="1.9.1" /> -->
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
         <plugin name="cordova-plugin-dialogs" source="npm" spec="1.1.1" />     
@@ -59,7 +59,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" />
         -->
 
-        <gap:plugin source="npm" name="cordova-plugin-facebook4">
+        <gap:plugin source="npm" name="cordova-plugin-facebook4" spec="1.9.1">
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
