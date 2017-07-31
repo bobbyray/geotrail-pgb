@@ -15,7 +15,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
     <author email="bob.schomburg@wigo.ws" href="http://cordova.io">
         WIGO Dev Team
     </author>
-    <!-- PhoneGap Build seems to always used index.html for content 
+    <!-- PhoneGap Build always uses index.html for content 
     <content src="Trail2.html" />
     -->
     <access origin="*" />
@@ -32,16 +32,8 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
     </platform>
     -->
     
-    <!-- ////20170729 try simplest icon default. 
-    <icon src="icon.png" />  
-    -->
-    
-    <!-- ////20170729 put icon under platform section, stopped working.
-    <icon platform="ios" src="res/android/geotrail512x512.png" />
-    -->
     <platform name="ios">
-        <!-- ////20170729DidNotWork <icon src="res/android/geotrail512x512.png" spec="1.9.1" /> -->
-        <!-- ////20170730 try all 16 icons that ios requires by pixel size -->
+        <!-- //20170730 Specify all 16 icons that ios requires by pixel size. Required by cli-6.5.0 -->
         <icon height="57" src="res/icons/icon-57.png" width="57" />
         <icon height="114" src="res/icons/icon-114.png" width="114" />
         <icon height="72" src="res/icons/icon-72.png" width="72" />
@@ -69,7 +61,6 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <plugin name="cordova-plugin-geolocation" source="npm" spec="2.4.0" />
 
         <plugin name="cordova-plugin-vibration" source="npm" spec="1.2.0" /> 
-        <!-- ////20170728Old <plugin name="org.apache.cordova.device-orientation" spec="0.3.11" source="npm" /> -->
         <plugin name="cordova-plugin-device-orientation" spec="1.0.7" source="npm" />
         
         <plugin name="cordova-plugin-statusbar" spec="2.2.0" source="npm" />
@@ -78,63 +69,11 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <!-- cordova-plugin-whitelist not found. 
         <plugin name="cordova-plugin-whitelist" source="pgb" spec="1.1.0" />
         -->
-
+        <!-- 07/30/2017 Update Facebook plugin so that cli-6.5.0 builds successfully. -->
         <gap:plugin source="npm" name="cordova-plugin-facebook4" spec="1.9.1">
             <param name="APP_ID" value=" 694318660701967" />
             <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
         </gap:plugin>
-        
-        <!-- ////20170728 
-        <gap:plugin source="npm" name="phonegap-facebook-plugin" spec="0.12.0" >
-            <param name="APP_ID" value=" 694318660701967" />
-            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
-        </gap:plugin>
-        -->
-        
-        <!-- ////20170728 found package but build fails with Api.js not found.
-        <gap:plugin source="npm" name="phonegap-facebook-plugin-gtg" spec="0.12.0" >
-            <param name="APP_ID" value=" 694318660701967" />
-            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
-        </gap:plugin>
-        -->
-        
-        <!-- ////20170728 try npm again.
-        <gap:plugin 
-            src="https://github.com/Wizcorp/phonegap-facebook-plugin#v0.12.0" >
-            <param name="APP_ID" value=" 694318660701967" />
-            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
-        </gap:plugin>
-        -->
-        <!-- ////20170728 remove .git from src=
-        <gap:plugin 
-            src="https://github.com/Wizcorp/phonegap-facebook-plugin.git#0.12.0" >
-            <param name="APP_ID" value=" 694318660701967" />
-            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
-        </gap:plugin>
-        -->
-        <!-- ////20170728 neither v 0.9.0 nor 0.12.0 works.
-        <gap:plugin name="com.phonegap.plugins.facebookconnect" version="0.12.0" >
-            <param name="APP_ID" value=" 694318660701967" />
-            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
-        </gap:plugin>
-        -->
-        
-        <!-- ////20170728         
-        <gap:plugin 
-            src="https://github.com/Wizcorp/phonegap-facebook-plugin.git#0.9.0" >
-            <param name="APP_ID" value=" 694318660701967" />
-            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
-        </gap:plugin>
-        -->
-        
-        <!-- //20161092 Build worked for phonegap-version cli-5.4.1, but went back to FacebookConnectPlugin version 0.9.0 
-                        phone-gap cli-6.3.0 fails to build.
-        <gap:plugin 
-            src="https://github.com/dhatawesomedude/phonegap-facebook-plugin.git">
-            <param name="APP_ID" value=" 694318660701967" />
-            <param name="APP_NAME" value="Wigo­G­e­o­T­rail" />
-        </gap:plugin>
-        --> 
 
         <!--  cordova-plugin-network-information is not working for ios.
         <plugin name="cordova-plugin-network-information" source="npm" spec="1.3.2" />         
