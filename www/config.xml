@@ -32,13 +32,33 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
     </platform>
     -->
     
-    <icon src="icon.png" />  <!-- ////20170729 try simplest icon default. -->
+    <!-- ////20170729 try simplest icon default. 
+    <icon src="icon.png" />  
+    -->
     
     <!-- ////20170729 put icon under platform section, stopped working.
     <icon platform="ios" src="res/android/geotrail512x512.png" />
     -->
     <platform name="ios">
         <!-- ////20170729DidNotWork <icon src="res/android/geotrail512x512.png" spec="1.9.1" /> -->
+        <!-- ////20170730 try all 16 icons that ios requires by pixel size -->
+        <icon height="57" src="res/icons/icon-57.png" width="57" />
+        <icon height="114" src="res/icons/icon-114.png" width="114" />
+        <icon height="72" src="res/icons/icon-72.png" width="72" />
+        <icon height="144" src="res/icons/icon-144.png" width="144" />
+        <icon height="76" src="res/icons/icon-76.png" width="76" />
+        <icon height="152" src="res/icons/icon-152.png" width="152" />
+        <icon height="40" src="res/icons/icon-40.png" width="40" />
+        <icon height="80" src="res/icons/icon-80.png" width="80" />
+        <icon height="50" src="res/icons/icon-50.png" width="50" />
+        <icon height="100" src="res/icons/icon-100.png" width="100" />
+        <icon height="120" src="res/icons/icon-120.png" width="120" />
+        <icon height="180" src="res/icons/icon-180.png" width="180" />
+        <icon height="29" src="res/icons/icon-29.png" width="29" />
+        <icon height="58" src="res/icons/icon-58.png" width="58" />
+        <icon height="87" src="res/icons/icon-87.png" width="87" />
+        <icon height="167" src="res/icons/icon-167.png" width="167" />   
+        
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
         <plugin name="cordova-plugin-dialogs" source="npm" spec="1.1.1" />     
