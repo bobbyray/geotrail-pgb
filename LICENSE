@@ -8,7 +8,7 @@ and are listed below. Refer to them individually to determine their kind of lice
     Leaflet 0.7.3
     OpenStreetMap.org for map database
     L.TileLayer.Cordova for caching map tiles
-    /Wizcorp/phonegap-facebook-plugin git v0.9.0
+    cordova-plugin-facebook4 npm v1.9.1
     /wnyc/cordova-plugin-wakeuptimer  git v1.0.1
     cordova-plugin-dialogs npm v1.1.1
     cordova-plugin-file-transfer npm v1.1.0
