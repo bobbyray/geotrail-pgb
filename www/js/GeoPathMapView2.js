@@ -185,28 +185,9 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
     //  case the display is set to the bounds of the path with zoom set accordingly.
     //  (Using current zoom does not work well because it is for the previous trail.)
     this.DrawPath = function (path, zoom, gptCenter) {
-        if (!IsMapLoaded())
-            return; // Quit if map has not been loaded.
-        //var polyline = L.polyline(latlngs, { color: 'red' }).addTo(map);
-        // Clear any current path before drawing another path.
-        this.ClearPath();
+        if (!DrawPath0(path)) 
+            return; 
 
-        // Quit if path is not defined.  
-        if (!path) {
-            curPath = null;
-            return;
-        }
-
-        curPathSegs.Init(path);
-        var pathCoords = curPathSegs.getPathCoords();
-
-        mapPath = L.polyline(pathCoords, { color: this.color.path, opacity: 0.5 });
-        mapPath.addTo(map);
-
-        // Draw start and end of path shape on the path.
-        SetStartEndOfPathShape();  
-
-        curPath = path; // Save current gpx path object.
         if (typeof(zoom) === 'number' && typeof(gptCenter) === 'object') {
             var llCenter = L.latLng(gptCenter.lat, gptCenter.lon);
             map.setZoomAround(llCenter, zoom); 
@@ -216,6 +197,45 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
             this.PanToPathCenter()
         }
     };
+
+    // Draws geo path on the map object.
+    // Useful for Edit and Draw view.
+    // Args:
+    //  path: wigo_ws_GpxPath object for the path.
+    this.DrawEditPath = function(path) { 
+        DrawPath0(path);
+    };
+
+    // Helper for this.DrawPath() and this.DrawEditPath().
+    // Draws geo path on the map object.
+    // Args:
+    //  path: wigo_ws_GpxPath object for the path.
+    // Returns: boolean. false for failure.
+    function DrawPath0(path) { 
+        if (!IsMapLoaded())
+            return false; // Quit if map has not been loaded.
+        //var polyline = L.polyline(latlngs, { color: 'red' }).addTo(map);
+        // Clear any current path before drawing another path.
+        that.ClearPath();
+
+        // Quit if path is not defined.  
+        if (!path) {
+            curPath = null;
+            return false;
+        }
+
+        curPathSegs.Init(path);
+        var pathCoords = curPathSegs.getPathCoords();
+
+        mapPath = L.polyline(pathCoords, { color: that.color.path, opacity: 0.5 });
+        mapPath.addTo(map);
+
+        // Draw start and end of path shape on the path.
+        SetStartEndOfPathShape();  
+
+        curPath = path; // Save current gpx path object.
+        return true;
+    }
 
     // Animates current path by showing an icon traveling along the path.
     this.AnimatePath = function() {  
@@ -313,6 +333,8 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
             var ne = L.latLng(path.gptNE.lat, path.gptNE.lon);
             var bounds = L.latLngBounds(sw, ne);
             map.fitBounds(bounds);
+            /* I don't like this either. Live with a trail occasionally off screen. 
+               User can touch Ctr Trail to get trail completely on screen.
             // Adjust bounds to account for map-canvas extending beyond bottom of screen.
             var pxBounds = map.getPixelBounds();
             var mapCanvas = that.getMapCanvas();
@@ -320,6 +342,7 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
                 var ptOffset = L.point(0, mapCanvas.offsetTop/2);
                 map.panBy(ptOffset);
             }
+            */
             /* // This does not work. I think needing to know zoom is the reason. 
             var sw = L.latLng(path.gptSW.lat, path.gptSW.lon);
             var ne = L.latLng(path.gptNE.lat, path.gptNE.lon);
@@ -337,21 +360,43 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
             map.fitBounds(bounds);
             */
         } else {
-            // Set zoom around last point of path.            
-            var iLast = path.arGeoPt.length -1;
-            if (iLast >= 0) {
-                var llEnd = L.latLng(path.arGeoPt[iLast].lat, path.arGeoPt[iLast].lon);
-                map.setZoom(12);
-                // Delay map.panTo() for map to display properly.
-                // I think the delay gives time to load map tiles
-                // 1000 milliseconds seems to work, 50 does not.
-                // Calling again helps if first time does not pan correctly.
-                setTimeout(function(){
-                    map.panTo(llEnd);
-                }, 1000);  // 1000 millisec seems to work,  50 does not. 
+            if (IsSinglePointArea(path)) { 
+                // Note: A single point area does not have a valid path boundary,
+                //       but it is used to define an area whose map tiles
+                //       can be cached offline without a trail selected.
+                // Calc corners for rect about the single point.
+                var mToSideMin = 500; // Number of meters to side of rect.
+                var llCenter = L.latLng(path.arGeoPt[0].lat, path.arGeoPt[0].lon);
+                var llNE = L.latLng(0,0);
+                var llSW = L.latLng(0,0);
+                var llSide;
+                // East (right) side.
+                llSide = llCenter.offsetXY(mToSideMin, 0);
+                llNE.lng = llSide.lng;
+                // North (top) side.
+                llSide = llCenter.offsetXY(0, mToSideMin);
+                llNE.lat = llSide.lat;
+                // West (left) side.
+                llSide = llCenter.offsetXY(-mToSideMin, 0);
+                llSW.lng = llSide.lng;
+                // South (bottom) side.
+                llSide = llCenter.offsetXY(0, -mToSideMin);
+                llSW.lat = llSide.lat;
+                // Fit map to the corners.
+                var bounds = L.latLngBounds(llSW, llNE);
+                map.fitBounds(bounds);
+            } else { 
+                // Set zoom around last point of path.
+                var iLast = path.arGeoPt.length -1;
+                if (iLast >= 0) {
+                    var llEnd = L.latLng(path.arGeoPt[iLast].lat, path.arGeoPt[iLast].lon);
+                    var zoom = map.getZoom();          
+                    map.setZoomAround(llEnd, zoom);    
+                }
             }
         }
     }
+
 
     // Sets geo location update figures on map for shortest distance to geo path, 
     // but only if current location is off the geo path by a specified amount.
@@ -905,7 +950,7 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
 
     // Event handler for zoomend event on map.
     function onMapZoomEnd(e) { 
-        if (degCompassHeading !== null)
+        if (degCompassHeading !== null) 
             SetCompassHeadingArrow(degCompassHeading);
     }
 
@@ -1328,6 +1373,7 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
     
     // Clears from map the compass heading arrow.
     function ClearCompassHeadingArrow() {
+        degCompassHeading = null;  
         if (compassHeadingArrow)
             map.removeLayer(compassHeadingArrow);
         
@@ -1677,6 +1723,22 @@ function wigo_ws_GeoPathMap(bShowMapCtrls, bTileCaching) {
             bValid = true;
         return bValid;
     };
+
+    
+    // Returns true if path is for areas of a single point.
+    // Arg:
+    //  path: wigo_ws_GpxPath containing path to check.
+    // Note: true iff path.arGeoPt has length 2 and element 0 equals element 1..
+    function IsSinglePointArea(path) {  
+        var bYes = path.arGeoPt.length === 2;
+        if (bYes) {
+            var el0 = path.arGeoPt[0];
+            var el1 = path.arGeoPt[1];
+            bYes = el0.lat === el1.lat && el0.lon === el1.lon; 
+        }
+        return bYes;
+    }
+    
 
     // Note: See SVN tags/20150915 for simpler pervious version that did not
     //       try to account for overlapping segments in the path.
