@@ -97,6 +97,9 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         -->
         <!-- //20161119 Above is supposed to detect off trail by tracking geolocation in background. -->
         
+        <!-- //20170927 background mode plugin. -->
+        <plugin name="cordova-plugin-background-mode" source="npm" spec="0.7.2" />
+        
         <preference name="StatusBarOverlaysWebView" value="false" /> 
         <preference name="StatusBarBackgroundColor" value="#A7A7A7"/>
         <preference name="StatusBarStyle" value="blacktranslucent" />        
