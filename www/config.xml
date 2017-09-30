@@ -87,17 +87,19 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <plugin name="cordova-plugin-local-notifications-mm" source="npm" spec="1.0.5" />
         -->
 
-        <!-- //20161121 Comment out. Do NOT think this allows tracking in background, ////20170928 try again --> 
+        <!-- //20161121 Comment out. //20170927 Still did not work.  
         <gap:config-file platform="ios" parent="UIBackgroundModes" overwrite="true"> 
             <array> <string>location</string> </array> 
         </gap:config-file>    
         <gap:config-file platform="ios" parent="NSLocationAlwaysUsageDescription" overwrite="true"> 
             <array> <string>Detect off trail.</string> </array> 
         </gap:config-file>
+        -->
         <!-- //20161119 Above is supposed to detect off trail by tracking geolocation in background. -->
-        
-        <!-- //20170927 background mode plugin. -->
+        <!-- //20170927 background mode plugin. Did not work for ios. Tried both configuration above and
+             plugin at the same time, and each separately.
         <plugin name="cordova-plugin-background-mode" source="npm" spec="0.7.2" />
+        -->
         
         <preference name="StatusBarOverlaysWebView" value="false" /> 
         <preference name="StatusBarBackgroundColor" value="#A7A7A7"/>
