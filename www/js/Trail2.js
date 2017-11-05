@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Work on RecordingTrail2 branch. Filter spurious record points.
-    var sVersion = "1.1.031-20171010"; // Constant string for App version. 
+    var sVersion = "1.1.031-20171105-1552"; // Constant string for App version. 
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -236,7 +236,7 @@ function wigo_ws_View() {
     //  Call once when app is loaded after event handlers have been set.
     this.Initialize = function () {
         // Helper to complete initialization after map has been initialized.
-        function CompleteInitialization(bOk, sMsg) {
+        function CompleteInitialization(bOk, sMsg) {  
             that.ShowStatus(sMsg, !bOk)
             if (bOk) { 
                 // Reset click for geo location testing when initializing
@@ -248,6 +248,7 @@ function wigo_ws_View() {
                     that.onSaveSettings(settings);
                 }
                 SetSettingsParams(settings);
+
                 // Set view find paramters for search for geo paths to the home area.
                 viewFindParams.setRect(that.eFindIx.home_area, settings.gptHomeAreaSW, settings.gptHomeAreaNE);
                 that.setModeUI(that.curMode());  
@@ -279,11 +280,15 @@ function wigo_ws_View() {
             return bNew;
         }
 
-        // Helper to do initialization. Completes asynchronously.
+        // Helper to do initialization. Completes asynchronously. 
         function DoInitialization() {
+            // Set parameters from settings before initializing the map. 
+            // Reset click for geo location testing when initializing
+            // due to loading this app. 
+            // Note: settings.bClickForGeoLoc can be set later by user in Main Menu > Settings.
             map.GoOffline(false);
             map.InitializeMap(function (bOk, sMsg) {
-                CompleteInitialization(bOk, sMsg);
+                CompleteInitialization(bOk, sMsg);  
             });
         }
 
@@ -425,13 +430,12 @@ function wigo_ws_View() {
         titleBar.scrollIntoView(); 
     };
 
-
     // Appends a status messages starting on a new line to current status message and
     // shows the full message.
     // Arg:
     //  sStatus: string of html to display.
     //  bError: boolean, optional. Indicates an error msg. Default to true.
-    // Note: appens a div element, whereas this.AppendStatus appends a span element.
+    // Note: appends a div element, whereas this.AppendStatus appends a span element.
     this.AppendStatusDiv = function (sStatus, bError) {  
         if (!divStatus.isEmpty()) {
             sStatus = "<br/>" + sStatus;
@@ -441,7 +445,6 @@ function wigo_ws_View() {
         titleBar.scrollIntoView(); 
     };
     
-
     // Shows the signin control bar. 
     // Arg:
     //  bShow: boolean. true to show. 
@@ -1468,6 +1471,14 @@ function wigo_ws_View() {
         var efficency = kineticCalories / actualCalories;
         cceNewEfficiencyNumber.set(efficency);
     }, false);
+    // Evant handler for Enter Key for cceActualCaloriesNumber.
+    // Kills focus for cceActualCaloriesNumber if key is Enter.
+    cceActualCaloriesNumber.ctrl.addEventListener('keydown', function(event) { 
+        var bEnterKey = IsEnterKey(event);
+        if (bEnterKey) {
+            this.blur();
+        }
+    }, false); 
     
     var cceNewEfficiencyNumber = new CCENumber('cceNewEfficiency', 3, true); // true => percentage
     cceNewEfficiencyNumber.ctrl.addEventListener('focus', SelectNumberOnFocus, false);  
@@ -1478,6 +1489,15 @@ function wigo_ws_View() {
         var actualCalories = kineticCalories / newEfficincy;
         cceActualCaloriesNumber.set(actualCalories);
     }, false);
+    // Evant handler for Enter Key for cceNewEfficiencyNumber.
+    // Kills focus for cceNewEfficiencyNumber if key is Enter.
+    cceNewEfficiencyNumber.ctrl.addEventListener('keydown', function(event) { 
+        var bEnterKey = IsEnterKey(event);
+        if (bEnterKey) {
+            this.blur();
+        }
+    }, false); 
+
     var cceCurEfficiencyLabel = new CCELabel('cceCurEfficiency', 3, true);  // true => percentage
 
     // Selects state for Tracking on/off and runs the tract timer accordingly.
@@ -2942,6 +2962,8 @@ function wigo_ws_View() {
                 map.ClearPathMarkers();  // Ensure path markers are cleared when recording. 
                 // Start watching for location change.
                 recordWatcher.watch();
+                // Check device motion for excessive acceleration.
+                deviceMotion.enableForRecording(); 
             };
 
             this.nextState = function(event) {
@@ -2961,6 +2983,7 @@ function wigo_ws_View() {
         function StateStopped() {
             this.prepare = function() {
                 recordWatcher.clear(); // Ensure watching for location change is stopped.
+                deviceMotion.disableForRecording(); // Stop checking device motion. 
                 recordCtrl.setLabel("Stopped");
                 recordCtrl.empty();
                 var bSavePathValid = uploader.isSavePathValid(); 
@@ -4094,6 +4117,8 @@ function wigo_ws_View() {
     // Remarks: Provides the callback function that is called after each timer period completes.
     function RunTrackTimer() {
         if (trackTimer.bOn) {
+            // Enable detecting motion for tracking.
+            deviceMotion.enableForTracking();
             trackTimer.SetTimer(function (result) {
                 if (result.bError) {
                     trackTimer.ClearTimer();
@@ -4119,6 +4144,8 @@ function wigo_ws_View() {
                 }
             });
         } else {
+            // Disable detecting motion for tracking.
+            deviceMotion.disableForTracking();  
             trackTimer.ClearTimer();
             ShowGeoTrackingOff();
         }
@@ -4126,7 +4153,7 @@ function wigo_ws_View() {
 
     // ** Controls for Settings
     var holderAllowGeoTracking = document.getElementById('holderAllowGeoTracking');
-    var selectAllowGeoTracking = new ctrls.DropDownControl(holderAllowGeoTracking, null, 'Allow Tracking', '', 'img/ws.wigo.dropdownhorizontalicon.png');
+    var selectAllowGeoTracking = new ctrls.DropDownControl(holderAllowGeoTracking, null, 'Allow Geo Tracking', '', 'img/ws.wigo.dropdownhorizontalicon.png');
     var selectAllowGeoTrackingValues; 
     if (app.deviceDetails.isAndroid() )
         selectAllowGeoTrackingValues =  
@@ -4260,10 +4287,10 @@ function wigo_ws_View() {
 
 
     parentEl = document.getElementById('holderPhoneAlert');
-    var selectPhoneAlert = ctrls.NewYesNoControl(parentEl, null, 'Allow Phone Alert', -1);
+    var selectPhoneAlert = ctrls.NewYesNoControl(parentEl, null, 'Allow Phone Alert?', -1);
 
     parentEl = document.getElementById('holderOffPathAlert');
-    var selectOffPathAlert = ctrls.NewYesNoControl(parentEl, null, 'Phone Alert Initially On', -1);
+    var selectOffPathAlert = ctrls.NewYesNoControl(parentEl, null, 'Phone Alert Initially On?', -1);
 
     parentEl = document.getElementById('holderPhoneVibeSecs');
     var numberPhoneVibeSecs = new ctrls.DropDownControl(parentEl, null, 'Phone Vibration in Secs', '',  'img/ws.wigo.dropdownhorizontalicon.png');
@@ -4324,6 +4351,88 @@ function wigo_ws_View() {
     }
     var recordDistanceAlert = new RecordDistanceAlert(); // Record Distance Alert object.
 
+    // Acceleration Alert composite control.
+    var labelAccelThres = document.getElementById('labelAccelThres');
+    var numberAccelThres = document.getElementById('numberAccelThres');
+    function AccelAlertThresCtrl() { // Object for Accel Alert composite label, number control.
+        // Call base class.
+        LabelNumberCtrl.call(this, labelAccelThres, numberAccelThres);
+
+        // **  Over-ride properties for this derived class.
+        // Show only one decimal place for number.
+        this.nDecimalPlaces = 1; 
+        
+        // Note: English units not used, only metric.
+        this.labelTextMetric = "Accel Alert Thres (m/sec^2)";
+        this.labelTextEnglish = "Accel Alert Thres (m/sec^2)";
+        
+        // Returns float. acceleration in m/sec^2 in metric units. 
+        // Note: English units not used. Use base class, which just returns number.
+        // Arg:
+        //  nNumber. float. acceleration in m/sec^2.
+        // this.metricToEnglish = function(nNumber) {return nNumber;};
+
+        // Returns float. acceleration in m/sec^2.
+        // Note: English units not used. Use base class which just returns number.
+        // Arg:
+        //  nNumber: float. number value in English units to convert to Metric units.
+        // this.englishToMetric = function(nNumber) {return nNumber;};
+        
+        // ** Members for this object.
+        // Enables alert for excessive acceleration.
+        this.enable = function(){ 
+            enabledCtrl.setState(1);
+        };
+
+        // Disables alert for excessive acceleration.
+        this.disable = function() {
+            enabledCtrl.setState(0);
+        };
+
+        // Returns true if accel alert is enabled.
+        this.isEnabled = function() {
+            var bEnabled = enabledCtrl.getState() === 1;
+            return bEnabled;
+        };
+
+        // ** private members
+        var holderAccelAlert = document.getElementById('holderAccelAlert');
+        var enabledCtrl = ctrls.NewYesNoControl(holderAccelAlert, null, "Accel Alert?", -1);
+    }
+    var accelAlertThres = new AccelAlertThresCtrl();
+
+    // Acceleration Alert Velocity composite control.
+    var labelAccelVThres = document.getElementById('labelAccelVThres');
+    var numberAccelVThres = document.getElementById('numberAccelVThres');
+    function AccelAlertVThresCtrl() { // Object for Accel Alert Velocity composite label, number control.
+        // Call base class.
+        LabelNumberCtrl.call(this, labelAccelVThres, numberAccelVThres);
+
+        // **  Over-ride properties for this derived class.
+        // Show only one decimal place for number.
+        this.nDecimalPlaces = 1; 
+        
+        // Note: English units not used, only metric.
+        this.labelTextMetric = "Accel Velocity Thres (m/sec)";
+        this.labelTextEnglish = "Accel Velocity Thres (m/sec)";
+        
+        // Returns float. acceleration in m/sec^2 in metric units. 
+        // Note: English units not used. Use base class, which just returns number.
+        // Arg:
+        //  nNumber. float. acceleration in m/sec^2.
+        // this.metricToEnglish = function(nNumber) {return nNumber;};
+
+        // Returns float. acceleration in m/sec^2.
+        // Note: English units not used. Use base class which just returns number.
+        // Arg:
+        //  nNumber: float. number value in English units to convert to Metric units.
+        // this.englishToMetric = function(nNumber) {return nNumber;};
+        
+        // **
+
+    }
+    var accelAlertVThres = new AccelAlertVThresCtrl(); 
+
     // Composite Control object for label and a number.
     // Constructor args:
     //  labelCtrl: HTMLElement. a label control.
@@ -4336,7 +4445,7 @@ function wigo_ws_View() {
         // boolean. true for UI value shown in metric. false for UI value shown in English units. 
         this.bMetric = false;
 
-        // ** Propertis to over-ride 
+        // ** Properties to over-ride 
         // Number of decimal places for showing number.
         this.nDecimalPlaces = 2;
 
@@ -4413,15 +4522,24 @@ function wigo_ws_View() {
         // Handler function selects text (digits) in the numberMass control.
         numberCtrl.addEventListener('focus', SelectNumberOnFocus, false); 
 
+        // Evant handler for Enter Key for numberCtrl.
+        // Kills focus for numberCtrl is key is Enter.
+        numberCtrl.addEventListener('keydown', function(event) {
+            var bEnterKey = IsEnterKey(event);
+            if (bEnterKey) {
+                numberCtrl.blur();
+            }
+        }, false); 
+
         var nDataDecimalPlaces = 4; 
     }
 
     // setting UI for Auto Trail Animation. 
     var holderAutoPathAnimation = document.getElementById('holderAutoPathAnimation');
-    var selectAutoPathAnimation = ctrls.NewYesNoControl(holderAutoPathAnimation, null, "Auto Trail Animation", -1);
+    var selectAutoPathAnimation = ctrls.NewYesNoControl(holderAutoPathAnimation, null, "Auto Trail Animation?", -1);
 
     var holderPebbleAlert = document.getElementById('holderPebbleAlert');
-    var selectPebbleAlert = ctrls.NewYesNoControl(holderPebbleAlert, null, 'Pebble Watch', -1);
+    var selectPebbleAlert = ctrls.NewYesNoControl(holderPebbleAlert, null, 'Pebble Watch?', -1);
 
     var holderPebbleVibeCount = document.getElementById('holderPebbleVibeCount');
     var numberPebbleVibeCount = new ctrls.DropDownControl(holderPebbleVibeCount, null, 'Pebble Vibration Count', '',  'img/ws.wigo.dropdownhorizontalicon.png');;
@@ -4574,6 +4692,11 @@ function wigo_ws_View() {
         };
     }
 
+    // Flags for showing layers on map. 
+    var holderTopologyLayer = document.getElementById('holderTopologyLayer');
+    var selectTopologyLayer = ctrls.NewYesNoControl(holderTopologyLayer, null, 'Show Topology Layer?', -1);
+    var holderSnowCoverLayer = document.getElementById('holderSnowCoverLayer');
+    var selectSnowCoverLayer = ctrls.NewYesNoControl(holderSnowCoverLayer, null, 'Show Snow Cover Layer?', -1);
 
     // ** Helper for Settings
 
@@ -4672,6 +4795,17 @@ function wigo_ws_View() {
             var bOk = lon >= -181.9 && lon < 180.1;
             return bOk;
         }
+        // Helper to check that at least one map layer is selected. 
+        function IsLayerSelectionOk() {
+            // Check that layer ctrls have valid state.    
+            let bTopoOk = IsYesNoCtrlOk(selectTopologyLayer);
+            if (!bTopoOk)
+                return false;
+            let bSnowCoverOk = IsYesNoCtrlOk(selectSnowCoverLayer);
+            if (!bSnowCoverOk)
+                return false;
+            return true;
+        }
 
         // Check each ctrl for validity one by one.
         if (!IsSelectCtrlOk2(selectAllowGeoTracking))  
@@ -4722,6 +4856,9 @@ function wigo_ws_View() {
         if (IsSettingCCEActive())  
             return false;
 
+        // Check map layers. 
+        if (!IsLayerSelectionOk())
+            return false;
         return true;
     }
 
@@ -4750,6 +4887,11 @@ function wigo_ws_View() {
         settings.secsPhoneVibe = parseFloat(numberPhoneVibeSecs.getSelectedValue());
         settings.countPhoneBeep = parseInt(numberPhoneBeepCount.getSelectedValue());
         settings.kmRecordDistancAlertInterval = recordDistanceAlert.getNumber();   
+
+        settings.bAccelAlert = accelAlertThres.isEnabled(); 
+        settings.nAccelThres = accelAlertThres.getNumber(); 
+        settings.nAccelVThres = accelAlertVThres.getNumber();
+
         settings.bAutoPathAnimation = selectAutoPathAnimation.getState() === 1; 
         settings.bPebbleAlert = selectPebbleAlert.getState() === 1;
         settings.countPebbleVibe = parseInt(numberPebbleVibeCount.getSelectedValue());
@@ -4757,6 +4899,8 @@ function wigo_ws_View() {
         settings.vSpuriousVLimit = parseFloat(numberSpuriousVLimit.getSelectedValue()); 
         settings.kgBodyMass = bodyMass.getMass(); 
         settings.calorieConversionEfficiency = cceLabelValue.get(); 
+        settings.bTopologyLayer = selectTopologyLayer.getState() === 1;  
+        settings.bSnowCoverLayer = selectSnowCoverLayer.getState() === 1; 
         settings.bCompassHeadingVisible = selectCompassHeadingVisible.getState() === 1; 
         settings.bClickForGeoLoc = selectClickForGeoLoc.getState() === 1;
         settings.gptHomeAreaSW.lat = numberHomeAreaSWLat.value;
@@ -4794,7 +4938,17 @@ function wigo_ws_View() {
 
         recordDistanceAlert.bMetric = settings.distanceUnits === 'metric';  
         recordDistanceAlert.setNumber(settings.kmRecordDistancAlertInterval); 
-        recordDistanceAlert.show();                                          
+        recordDistanceAlert.show();      
+        
+        if (settings.bAccelAlert)
+            accelAlertThres.enable();
+        else
+            accelAlertThres.disable();
+        accelAlertThres.setNumber(settings.nAccelThres);
+        accelAlertThres.show();
+        accelAlertVThres.setNumber(settings.nAccelVThres);
+        accelAlertVThres.show();
+        
         selectAutoPathAnimation.setState(settings.bAutoPathAnimation ? 1 : 0); 
         selectPebbleAlert.setState(settings.bPebbleAlert ? 1 : 0);
         numberPebbleVibeCount.setSelected(settings.countPebbleVibe.toFixed(0));
@@ -4849,6 +5003,10 @@ function wigo_ws_View() {
         ShowElement(cceNewEfficiencyNumber.ctrl, true);
         cceCurEfficiencyLabel.showParent(bShowCCERow);
 
+        // Set ctrls for showing layers on map.
+        selectTopologyLayer.setState(settings.bTopologyLayer ? 1 : 0);
+        selectSnowCoverLayer.setState(settings.bSnowCoverLayer ? 1: 0); 
+
         selectCompassHeadingVisible.setState(settings.bCompassHeadingVisible ? 1 : 0); 
         selectClickForGeoLoc.setState(settings.bClickForGeoLoc ? 1 : 0);
         numberHomeAreaSWLat.value = settings.gptHomeAreaSW.lat;
@@ -4872,6 +5030,15 @@ function wigo_ws_View() {
         map.recordPath.setVLimit(settings.vSpuriousVLimit); 
         // Set record distance alert interal. 
         map.recordPath.setDistanceAlertInterval(settings.kmRecordDistancAlertInterval); 
+
+        // Set parameters for excessive acceleration.
+        if (settings.bAccelAlert)
+            deviceMotion.allow();
+        else
+            deviceMotion.disallow();
+        deviceMotion.setAccelThres(settings.nAccelThres);
+        deviceMotion.setAccelVThres(settings.nAccelVThres); 
+
         // Set body mass. (Used to calculate calories for a recorded path.)
         map.recordPath.setBodyMass(settings.kgBodyMass);  
         // Set calorie conversion efficiency factor for RecordFSM 
@@ -4886,6 +5053,12 @@ function wigo_ws_View() {
 
         alerter.msPhoneVibe = Math.round(settings.secsPhoneVibe * 1000);
         alerter.countPhoneBeep = settings.countPhoneBeep;
+
+        // Set flags for map layers. 
+        map.setSnowCoverLayerFlag(settings.bSnowCoverLayer); 
+        map.setTopologyLayerFlag(settings.bTopologyLayer); 
+        // Update which layers show on the map.
+        map.updateMapLayers();
 
         // Set boolean for showing compass heading on the map.
         map.SetCompassHeadingVisibleState(settings.bCompassHeadingVisible); // 20160609 added. 
@@ -4979,6 +5152,8 @@ function wigo_ws_View() {
     var divHelpGuide = document.getElementById('divHelpGuide');
     function ShowHelpGuide(bShow) {
         ShowHelpDiv(divHelpGuide, bShow);
+        if (bShow)
+            linkBackNavigationHelpGuide.showBackButtonIfNeeded(); 
     }
 
     // Shows or hides the divHelpBackToTrail.
@@ -5063,7 +5238,7 @@ function wigo_ws_View() {
         titleBar.scrollIntoView();   
     }
 
-    // ** More function 
+    // ** More functions 
 
     // Returns true if HTML el is hiddent.
     // Note: Do not use for a fixed position element, which is not used anyway.
@@ -5850,7 +6025,8 @@ function wigo_ws_View() {
         };
 
         // Initializes the object.
-        // Note: Currently handlers simply log event that is raised to console.
+        // Note: Handlers log event that is raised to console.
+        //       For activate event only, background mode is allowed by disabling web view optimizations.
         this.initialize = function() {
             // local helper function.
             // Define handler to log event that is raised to console.
@@ -5923,6 +6099,187 @@ function wigo_ws_View() {
     if (window.app.deviceDetails.isiPhone())
         backgroundMode = new BackgroundModeUnavailable(); 
     
+
+    // Object for detection device motion.
+    // Constructor arg:
+    //  view: ref to wigo_ws_View.
+    function DeviceMotion(view) { 
+        // Allows device motion to be detected.
+        this.allow = function() {
+            bAllow = true;
+        };
+        var bAllow = false;
+
+        // Disallows detecting device motion.
+        this.disallow = function() {
+            bAllow = false;
+            bTracking = false;
+            bRecording = false;
+            UnHandleDeviceMotion();
+        };
+
+        // Sets the accessive acceleration threshold.
+        // Arg:
+        //  thres: float. acceleration in m/sec%2.
+        this.setAccelThres = function(thres) {
+            nAccelThres = thres;
+        };
+        var nAccelThres = 9.8;
+
+        // Sets the accessive acceleration velocity threshold.
+        // Arg:
+        //  thres: float. velocity in m/sec.
+        this.setAccelVThres = function(thres) {
+            nAccelVThres = thres;
+        };
+        var nAccelVThres = 6.0; 
+
+        // Enables receiving device motion events for tracking.
+        this.enableForTracking = function() {
+            if (!bAllow)
+                return;  // Quit if not allowed.
+            if (!bRecording && !bTracking) {
+                HandleDeviceMotion();
+            }
+            bTracking = true;
+        };
+
+        // Disables receiving device motion events for tracking.
+        this.disableForTracking = function() {
+            if (bTracking && !bRecording) {
+                UnHandleDeviceMotion();
+            }
+            bTracking = false;
+        };
+
+        // Enables receiving device motion events for recording.
+        this.enableForRecording = function() {  
+            if (!bAllow)
+                return;  // Quit if not allowed.
+            if (!bRecording && !bTracking) {
+                HandleDeviceMotion();
+            }
+            bRecording = true;
+        };
+
+        // Disables receiving device motion events for tracking.
+        this.disableForRecording = function() { 
+            if (!bTracking && bRecording) {
+                UnHandleDeviceMotion();
+            }
+            bRecording = false;
+        };
+
+        // Event handler for calibrating compass.
+        function OnCompassNeedsCalibration(event) {
+            // ask user to wave device in a figure-eight motion.  
+            if (!ackCalibrationNeededPending) {
+                ackCalibrationNeededPending = true;
+                AlertMsg('Your compass needs calibrating! Wave your device in a figure-eight motion', function() {
+                    ackCalibrationNeededPending = false;
+                }); 
+            }
+            event.preventDefault();
+        }
+        var ackCalibrationNeededPending = false; // Boolean flag indicating calibration by user is pending.
+
+        // Event handler for device motion.
+        // Checks for excessive acceleration.
+        function OnDeviceMotion(event) {
+            var sMsg;
+            // Note: Events occur even if motion is not occurring. Cannot detect previously stationary by
+            //       testing for long duration since previous event.
+
+            prevAcceleration = curAcceleration; 
+            curAcceleration = event.acceleration;
+            curInterval = event.interval;
+            if (!ackCalibrationNeededPending) {
+                var deltaV = VelocityDelta();
+                alertVelocity.x += deltaV.x;
+                alertVelocity.y += deltaV.y;
+                alertVelocity.z += deltaV.z;
+
+                var speed = Magnitude(alertVelocity); 
+                var accel = Magnitude(curAcceleration);
+                if (accel > nAccelThres) {  
+                    // Set alert velocity to zero. Alert velocity will need to exceed threshold before alert is issued again.
+                    if (speed > nAccelVThres) {
+                        ResetAlertVelocity(); 
+                        sMsg = "Accel alert: a={0}m/sec^2, v={1}m/sec".format(accel.toFixed(1), speed.toFixed(1)); 
+                        view.ShowStatus(sMsg, false);
+                        console.log(sMsg);
+                        alerter.DoAlert(); 
+                        pebbleMsg.Send("Accel alert\nA={0}m/sec^2\nV={1}m/sec".format(accel.toFixed(1), speed.toFixed(1)),true,false); // true => vibrate, false => no timeout
+                    }
+                } else {
+                    ResetAlertVelocity(); 
+                }
+            }
+        }
+
+        var bTracking = false;  // Boolean to enable event handling for tracking.
+        var bRecording = false; // Boolean to enable event handling for recording.
+
+        // Start handling events for device motion.
+        function HandleDeviceMotion() {
+            window.addEventListener("compassneedscalibration", OnCompassNeedsCalibration, true);
+            ResetDeviceMotion();
+            window.addEventListener("devicemotion", OnDeviceMotion, true);
+        }
+
+        // Stop handling events for device motion.
+        function UnHandleDeviceMotion() {
+            window.removeEventListener("compassneedscalibration", OnCompassNeedsCalibration, true);
+            window.removeEventListener("devicemotion", OnDeviceMotion, true);
+            ResetDeviceMotion();
+        }
+
+        // Resets variables for device motion.
+        function ResetDeviceMotion() {
+            curAcceleration = {x: 0, y: 0, z: 0};
+            curInterval = 0;
+            ResetAlertVelocity(); 
+        }
+
+        // Sets all components of alert velocity vector to 0.
+        function ResetAlertVelocity() {
+            alertVelocity.x = 0;
+            alertVelocity.y = 0;
+            alertVelocity.z = 0; 
+        }
+
+        var curAcceleration = {x: 0, y: 0, z: 0} ; // current acceleration vector in meters/sec. (z = -9.81 is free fall due to gravity)
+        var curInterval = 0;  // Current interval in milliseconds wrt to previous. Note should be constant set by event handler.
+        var alertVelocity = {x: 0, y: 0, z: 0}; // Velocity vector.
+        var prevAcceleration = {x: 0, y: 0, z: 0}; // previous acceleration vector.
+        var maxAccelerationMagnitude =  3.0; // Magnitude of acceleration beyond which and alert is given.
+        
+        // Returns vector for the change in velocity from current acceleration wrt previous acceleration.
+        // Returns obj: {x: float, y: float, z: float}. Units for each component is meters/sec.
+        function VelocityDelta() {
+            // Helper to calculation area under acceleration segment for time delta, which change in velocity.
+            // Args:
+            // a, b: vectors wiith x, y, z components as floats.
+            // dt: float. delta time in seconds.
+            function DeltaArea(b, a, dt) {
+                var c = {x: dt*(b.x + a.x)/2, y: dt*(b.y + a.y)/2, z: dt*(b.z + a.z)/2};
+                return c;
+            }
+            var deltaV = DeltaArea(curAcceleration, prevAcceleration, curInterval/1000);
+            return deltaV;
+        }
+
+        // Returns float for magnitude of a vector.
+        // Arg:
+        //  av: object with x, y, and z members of a vector.
+        function Magnitude(av) {
+            var mag = Math.sqrt(av.x*av.x + av.y*av.y + av.z*av.z);
+            return mag;
+        }
+    }
+    var deviceMotion = new DeviceMotion(this); // Object to detect acceleration.
+
+
     // Shows Status msg for result from map.SetGeoLocUpdate(..).
     // Arg:
     //  upd is {bToPath: boolean, dToPath: float, bearingToPath: float, bRefLine: float, bearingRefLine: float,
@@ -6725,8 +7082,60 @@ Are you sure you want to delete the maps?";
 
     // Object for network (internet) connection state.
     var networkInfo = wigo_ws_NewNetworkInformation(window.app.deviceDetails.isiPhone());
-}
 
+    // Object for navigating back from a link that has been followed in an HTML description. 
+    // Construct Arg:
+    //  jqsDiv: string for jquery selector of html div element containing the html to be navigated.
+    //         Note: For an id, must include # prefix for jquery selector.
+    //  jqsBackButton: string for jquery selector of back button. May select multiple buttons.
+    //         Note: For an id, must include # prefix for jquery selector.
+    //               Any html element that raises a click event can be used.
+    function LinkBackNavigation(jqsDiv, jqsBackButton) {  
+
+        // Shows the back button(s) if needed, otherwise hides.
+        this.showBackButtonIfNeeded = function() {
+            ShowBackButtonIfNeeded();
+        };
+
+        // Find all the links in the div.
+        var div = $(jqsDiv)[0]; 
+        var jqLinks = $(jqsDiv + " a"); // list of jquery elements for HTML link elements.
+        jqLinks.on('click', function(event) {
+            // Event handler for a link clicked.
+            arScrollTop.push(div.scrollTop);
+            ShowBackButtonIfNeeded();
+
+        });
+
+        var jqBackButton = $(jqsBackButton);
+        jqBackButton.on('click', function(event) {
+            // Event handler for back button.
+            if (arScrollTop.length > 0) {
+                var scrollTop = arScrollTop.pop();
+                ShowBackButtonIfNeeded();
+                if (div) {
+                    div.scrollTop = scrollTop;
+                }
+            }
+        });
+
+        // Shows the back button(s) if needed, otherwise hides.
+        function ShowBackButtonIfNeeded() {
+            var bVisible = arScrollTop.length > 0;
+            if (bVisible)
+                jqBackButton.show();
+            else 
+                jqBackButton.hide();
+        }
+
+        // Stack of scroll top number. When link is clicked, 
+        // the current scroll top is pushed to stack.
+        var arScrollTop = []; 
+        // Initially hide the back button when object is constructed.
+        ShowBackButtonIfNeeded(); 
+    }
+    var linkBackNavigationHelpGuide = new LinkBackNavigation('#divHelpGuide','#buBackDialogBar'); 
+}
 
 // Object for controller of the page.
 function wigo_ws_Controller() {
