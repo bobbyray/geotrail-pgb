@@ -5144,6 +5144,7 @@ function wigo_ws_View() {
     }
 
     function ShowHelpDiv(div, bShow) {
+        HideCloseDialogBackButton(); // Hide back button, enable later if needed. ////20171118
         ShowModeDiv(!bShow);
         ShowElement(div, bShow);
         ShowElement(closeDialogBar, bShow);
@@ -5165,6 +5166,8 @@ function wigo_ws_View() {
     //  bShow: boolean to indicate to show.
     var divHelpBackToTrail = document.getElementById('divHelpBackToTrail');
     function ShowHelpBackToTrail(bShow) {
+        ////20171118 ShowElement(buBackDialogBar, false);  ////20171118 added
+        ////20171118 HideCloseDialogBackButton(); 
         ShowHelpDiv(divHelpBackToTrail, bShow);    
     }
 
@@ -5185,6 +5188,8 @@ function wigo_ws_View() {
     else
         divHelpLicense = document.getElementById('divHelpLicense');
     function ShowHelpLicense(bShow) {
+        ////20171118 ShowElement(buBackDialogBar, false); ////20171118 added
+        ////20171118 HideCloseDialogBackButton(); ////20171118 added
         ShowHelpDiv(divHelpLicense, bShow);
     }
 
@@ -7152,10 +7157,11 @@ function wigo_ws_View() {
         trackTimer.bOn = nState === 1;    // Allow/disallow geo-tracking.
         if (!trackTimer.bOn) {
             // Send message to Pebble that tracking is off.
-            pebbleMsg.Send("Track Off", false, false); // no vibration, no timeout.
+            pebbleMsg.Send("Tracking Off", false, false); // no vibration, no timeout.
         } else {
-            // Show status that tracking is on. The Alert On/Fff ctrl on Panel used to indicate the state.
-            that.ShowStatus("Tracking on", false); 
+            // Show status that tracking is on. 
+            that.ShowStatus("Tracking On", false); 
+            pebbleMsg.Send("Tracking On", false, false); // no vibration, no timeout.
         }
         // Start or clear trackTimer.
         RunTrackTimer();
@@ -7320,6 +7326,14 @@ Are you sure you want to delete the maps?";
         ShowBackButtonIfNeeded(); 
     }
     var linkBackNavigationHelpGuide = new LinkBackNavigation('#divHelpGuide','#buBackDialogBar'); 
+    var buBackDialogBar = document.getElementById('buBackDialogBar');  ////20171118 added
+    
+    // Hide back button on CloseDialogBar.
+    // Note: img is used for element and ShowElement(bu, false) fails because img style is forced to display: block.
+    var jqbuBackDialogBar = $('#buBackDialogBar');  ////20171118 added
+    function HideCloseDialogBackButton() {   ////20171118 added
+        jqbuBackDialogBar.hide();
+    }
 }
 
 // Object for controller of the page.
