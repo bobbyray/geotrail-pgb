@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Work on RecordingTrail2 branch. Filter spurious record points.
-    var sVersion = "1.1.031-20171117-1434"; // Constant string for App version. 
+    var sVersion = "1.1.031-20171120-1625"; // Constant string for App version. 
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -443,6 +443,61 @@ function wigo_ws_View() {
 
         divStatus.addDiv(sStatus, bError);
         titleBar.scrollIntoView(); 
+    };
+
+    // Show status change.
+    // A status change occurs when Track changes or Record starts or stops.
+    // Shows the status change in the status div and on Pebble.
+    this.ShowStatusChange = function() { 
+        let sStatus = '';
+        let sStatusPebble = '';
+
+        // Helper to update status for tracking.
+        function TrackStatus() {
+            if (trackTimer.bOn) {
+                sStatus += "Track On<br/>"
+                sStatusPebble += "Track On\n";
+            } else {
+                sStatus += "Track Off<br/>"
+                sStatusPebble += "Track Off\n";
+            }
+        }
+
+        // Helper to update status for recording.
+        function RecordStatus() {
+            if (recordFSM.isRecording()) {
+                sStatus += 'Record On<br/>';
+                sStatusPebble += 'Record On\n';
+            } else {
+                sStatus += 'Record Off<br/>';
+                sStatusPebble += 'Record Off\n';
+            }
+        }
+        
+        // Helper to update status for acceleration sensing.
+        function AccelStatus() {
+            if (app.deviceDetails.isAndroid()) {
+                if (deviceMotion.bAvailable) {
+                    let sSensing = deviceMotion.isSensing() ? 'On' : 'Off';
+                    sStatus += 'Accel Sensing: {0}<br/>'.format(sSensing)
+                    sStatusPebble += 'Accel: {0}\n'.format(sSensing)
+                } else {
+                    sStatus += 'Accel Sensing Disabled<br/>';
+                    sStatusPebble += 'Accel Disabled\n';
+                }
+            } 
+            // Note: For iPhone, not status at all because not used.
+        }
+
+        // Form status message.
+        TrackStatus();
+        RecordStatus();
+        AccelStatus();
+
+        // Show status change.
+        this.ShowStatus(sStatus, false);
+        // Show status change on Pebble.
+        pebbleMsg.Send(sStatusPebble, false, false); // no vibe, no timeout.
     };
     
     // Shows the signin control bar. 
@@ -2941,6 +2996,7 @@ function wigo_ws_View() {
                         stateOn.prepare();
                         map.recordPath.enableZoomToFirstCoordOnce(); 
                         curState = stateOn;
+                        view.ShowStatusChange(); // Show status for Record, Track, and Accel. 
                         break;
                     case that.event.unclear:
                         // Display the trail that has been restored.
@@ -2973,6 +3029,8 @@ function wigo_ws_View() {
                         map.recordPath.appendPt(null, msTimeStamp, map.recordPath.eRecordPt.PAUSE); 
                         stateStopped.prepare();
                         curState = stateStopped;
+                        view.ShowStatusChange(); // Show status for Record, Track, and Accel. 
+                        break; 
                 }
             }
 
@@ -3088,6 +3146,7 @@ function wigo_ws_View() {
                         map.recordPath.appendPt(null, msTimeStamp, map.recordPath.eRecordPt.RESUME); 
                         stateOn.prepare();
                         curState = stateOn;
+                        view.ShowStatusChange(); // Show status for Record, Track, and Accel. 
                         break;
                     case that.event.clear:
                         stateInitial.prepare();
@@ -5032,6 +5091,7 @@ function wigo_ws_View() {
         map.recordPath.setDistanceAlertInterval(settings.kmRecordDistancAlertInterval); 
 
         // Set parameters for excessive acceleration.
+        deviceMotion.bAvailable = settings.bAccelAlert; 
         if (settings.bAccelAlert && window.app.deviceDetails.isAndroid())  // Accel Alert is not available for iPhone. 
             deviceMotion.allow();
         else
@@ -5144,7 +5204,7 @@ function wigo_ws_View() {
     }
 
     function ShowHelpDiv(div, bShow) {
-        HideCloseDialogBackButton(); // Hide back button, enable later if needed. ////20171118
+        HideCloseDialogBackButton(); // Hide back button, enable later if needed. 
         ShowModeDiv(!bShow);
         ShowElement(div, bShow);
         ShowElement(closeDialogBar, bShow);
@@ -5166,8 +5226,6 @@ function wigo_ws_View() {
     //  bShow: boolean to indicate to show.
     var divHelpBackToTrail = document.getElementById('divHelpBackToTrail');
     function ShowHelpBackToTrail(bShow) {
-        ////20171118 ShowElement(buBackDialogBar, false);  ////20171118 added
-        ////20171118 HideCloseDialogBackButton(); 
         ShowHelpDiv(divHelpBackToTrail, bShow);    
     }
 
@@ -5188,8 +5246,6 @@ function wigo_ws_View() {
     else
         divHelpLicense = document.getElementById('divHelpLicense');
     function ShowHelpLicense(bShow) {
-        ////20171118 ShowElement(buBackDialogBar, false); ////20171118 added
-        ////20171118 HideCloseDialogBackButton(); ////20171118 added
         ShowHelpDiv(divHelpLicense, bShow);
     }
 
@@ -6299,7 +6355,10 @@ function wigo_ws_View() {
     // Object for detection device motion.
     // Constructor arg:
     //  view: ref to wigo_ws_View.
-    function DeviceMotion(view) { 
+    function DeviceMotion(view) {
+        // Boolean flag indicating sensing device motion is available. 
+        this.bAvailable = false; 
+
         // Allows device motion to be detected.
         this.allow = function() {
             bAllow = true;
@@ -6366,6 +6425,11 @@ function wigo_ws_View() {
             bRecording = false;
         };
 
+        // Returns true if acceleration is being sensed.
+        this.isSensing = function() { // Added function.
+            return bTracking || bRecording;
+        }
+
         // Event handler (callback) for successfully checking device motion.
         // Checks for excessive acceleration.
         function OnDeviceMotion(acceleration) { 
@@ -6390,7 +6454,7 @@ function wigo_ws_View() {
                     view.ShowStatus(sMsg, false);
                     console.log(sMsg);
                     alerter.DoAlert(); 
-                    pebbleMsg.Send("Accel alert\nA={0}m/sec^2\nV={1}m/sec".format(accel.toFixed(1), speed.toFixed(1)),true,false); // true => vibrate, false => no timeout
+                    pebbleMsg.Send("Accel alert\nA={0}m/s^2\nV={1}m/s".format(accel.toFixed(1), speed.toFixed(1)),true,false); // true => vibrate, false => no timeout
                 }
             } else {
                 ResetAlertVelocity(); 
@@ -6409,17 +6473,20 @@ function wigo_ws_View() {
         // Start handling events for device motion.
         function HandleDeviceMotion() {
             ResetDeviceMotion();
-            watchID = navigator.accelerometer.watchAcceleration(
+            if (navigator && navigator.accelerometer && navigator.accelerometer.watchAcceleration) { // Ignore if navigator.accelerometer does not exist. 
+                watchID = navigator.accelerometer.watchAcceleration(
                 OnDeviceMotion, // accelerometerSuccess,
                 OnDeviceMotionError, // accelerometerError,
                 // accelerometerOptions
                 {frequency: 30 } // Update every 30 milliseconds.
-            );            
+                );            
+            } 
         }
 
         // Stop handling events for device motion.
         function UnHandleDeviceMotion() {
-            navigator.accelerometer.clearWatch(watchID);
+            if (navigator && navigator.accelerometer && navigator.accelerometer.clearWatch)  // Ignore if navigator.accelerometer does not exist.
+                navigator.accelerometer.clearWatch(watchID);
             watchID = 0;
             ResetDeviceMotion();
         }
@@ -7155,16 +7222,9 @@ function wigo_ws_View() {
         that.ClearStatus(); 
         // Save state of flag to track geo location.
         trackTimer.bOn = nState === 1;    // Allow/disallow geo-tracking.
-        if (!trackTimer.bOn) {
-            // Send message to Pebble that tracking is off.
-            pebbleMsg.Send("Tracking Off", false, false); // no vibration, no timeout.
-        } else {
-            // Show status that tracking is on. 
-            that.ShowStatus("Tracking On", false); 
-            pebbleMsg.Send("Tracking On", false, false); // no vibration, no timeout.
-        }
         // Start or clear trackTimer.
         RunTrackTimer();
+        that.ShowStatusChange(); // Show status for Track, Record, and Accel.
     };
 
     // Sets values for the Track and Alert OnOffCtrls on the mapBar.
@@ -7326,12 +7386,12 @@ Are you sure you want to delete the maps?";
         ShowBackButtonIfNeeded(); 
     }
     var linkBackNavigationHelpGuide = new LinkBackNavigation('#divHelpGuide','#buBackDialogBar'); 
-    var buBackDialogBar = document.getElementById('buBackDialogBar');  ////20171118 added
+    var buBackDialogBar = document.getElementById('buBackDialogBar');  
     
     // Hide back button on CloseDialogBar.
     // Note: img is used for element and ShowElement(bu, false) fails because img style is forced to display: block.
-    var jqbuBackDialogBar = $('#buBackDialogBar');  ////20171118 added
-    function HideCloseDialogBackButton() {   ////20171118 added
+    var jqbuBackDialogBar = $('#buBackDialogBar'); 
+    function HideCloseDialogBackButton() {  
         jqbuBackDialogBar.hide();
     }
 }
