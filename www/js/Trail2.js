@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Work on RecordingTrail2 branch. Filter spurious record points.
-    var sVersion = "1.1.032-20171130"; // Constant string for App version. 
+    var sVersion = "1.1.032-RecStats20171207"; // Constant string for App version. 
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -181,6 +181,11 @@ function wigo_ws_View() {
     //      or null if there is no record stats object.
     this.onGetLastRecordStats = function() {};  
 
+    // Gets list of recorded stats.
+    // Arg: none.
+    // Returns: Array of wigo_ws_GeoTrailRecordStat objects.
+    this.onGetRecordStatsList = function() { return [];} 
+ 
     // Sets recorded starts.
     // Handler Signature:
     //  Args: 
@@ -331,7 +336,7 @@ function wigo_ws_View() {
     // Enumeration of mode for processing geo paths.
     // NOTE: the values must match the index of the option in selectMode drop list in trail2.html.
     this.eMode = {
-        online_view: 0, offline: 1, online_edit: 2, online_define: 3, select_mode: 4, tou_not_accepted: 5, unknown: 6,
+        online_view: 0, offline: 1, online_edit: 2, online_define: 3, select_mode: 4, tou_not_accepted: 5, record_stats_view: 6, unknown: 7,
         toNum: function (sMode) { // Returns byte value for sMode property name.
             var nMode = this[sMode];
             if (nMode === undefined)
@@ -347,7 +352,8 @@ function wigo_ws_View() {
                 case this.offline: sMode = 'offline'; break;
                 case this.select_mode:sMode = 'select_mode'; break;
                 case this.tou_not_accepted: sMode = 'tou_not_accepted'; break;
-                default: sMode = 'online_view';
+                case this.record_stats_view: sMode = 'record_stats_view'; break;  
+                default: sMode = 'online_view'; break;  
             }
             return sMode;
         }
@@ -568,6 +574,7 @@ function wigo_ws_View() {
                 ShowElement(mapBar, false);
                 ShowOwnerIdDiv(false);
                 ShowPathInfoDiv(false);  
+                ShowElement(divRecordStatsHistory, false); 
         }
 
         var nPrevMode = nMode; 
@@ -649,6 +656,21 @@ function wigo_ws_View() {
                 HideAllBars();
                 titleBar.show(false);
                 ShowMapCanvas(false);
+                break;
+            case this.eMode.record_stats_view: 
+                HideAllBars();
+                titleBar.setTitle("Record Stats History");
+                let bSetHeight = false; 
+                if (!recordStatsHistory)  {
+                    bSetHeight = true;
+                    recordStatsHistory = new RecordStatsHistory(divRecordStatsHistory);    
+                }
+                recordStatsHistory.update(that.onGetRecordStatsList());
+                ShowElement(divRecordStatsHistory, true);
+                recordStatsHistory.showMonthDate(); 
+                if (bSetHeight) { 
+                    recordStatsHistory.setListHeight(titleHolder.offsetHeight); 
+                }
                 break;
         }
     };
@@ -1180,6 +1202,9 @@ function wigo_ws_View() {
         return mapCanvas;
     }
 
+    // Stats History List for record_stats_view. 
+    var divRecordStatsHistory = document.getElementById('divRecordStatsHistory');
+    var recordStatsHistory = null; 
     
     // ** Attach event handler for controls.
     var onlineSaveOffline = document.getElementById('onlineSaveOffline');
@@ -3250,7 +3275,6 @@ function wigo_ws_View() {
                         sMsg += s;
                     }
                     view.ShowStatus(sMsg, false);
-                    view.onClearRecordStats(); // May want to remove later when there is a place to clear stats. 
                     view.onSetRecordStats(stats); // Save stats data. 
                 } else {
                     view.ShowStatus("Failed to calculate stats!");
@@ -5764,7 +5788,7 @@ function wigo_ws_View() {
                 el.classList.add('wigo_ws_NoShow');
             }
         } else {
-            ShowStatus("element to show is undefined.");
+            that.ShowStatus("element to show is undefined.");
         }
     }
 
@@ -5955,7 +5979,7 @@ function wigo_ws_View() {
                 nFixed = this.mileFixedPoint;
             else if (result.unit === 'km')
                 nFixed = this.kmeterFixedPoint;
-            var s = result.n.toFixed(nFixed) + result.unit;
+            var s = result.n.toFixed(nFixed) + " " + result.unit; 
             return s; 
         };
 
@@ -5963,30 +5987,30 @@ function wigo_ws_View() {
         //  speed: number. speed value.
         //  unit:  string: unit for speed:
         //         For English: MPH
-        //           MPH is for miles per hour.
+        //           mph is for miles per hour.
         //         For Metric: KPM
-        //           KPH is for kilometers per hour.
-        //  text: string. speed value with unit suffic.
+        //           mph is for kilometers per hour.
+        //  text: string. speed value with unit suffix.
         // Args:
         //  mLen: number. Length (distance) in meters.
         //  secTime: number. Elapsed time in seconds.
         this.toSpeed = function(mLen, secTime) { 
-            var result = {speed: 0, unit: "MPH", text: ""};
+            var result = {speed: 0, unit: "mph", text: ""};  
             var dist;
             var hrTime = secTime / 3600; // 3600 seconds in an hour.
             if (this.bMetric) {
                 // Concvert meters to kilometes.
                 dist = mLen / 1000.0;
-                result.unit = "KPH";
+                result.unit = "kph";   
             } else {
                 // Convert meters to miles.
                 dist = mLen / 1609.34;
-                result.unit = "MPH"; 
+                result.unit = "mph";   
             }
             result.speed = dist / hrTime;
             if (Number.isFinite(result.speed)) {
                 var nFixed = this.bMetric ? this.kmeterFixedPoint : this.mileFixedPoint;
-                result.text = "{0}{1}".format(result.speed.toFixed(nFixed), result.unit);
+                result.text = "{0} {1}".format(result.speed.toFixed(nFixed), result.unit);
             } else {
                 result.text = "error" + result.unit;
             }
@@ -6845,8 +6869,8 @@ function wigo_ws_View() {
     //      divMode area contains the bars and other user interface.
     divMode.addEventListener('touchmove', function(event){
         // Allow scrolling of selectGoTrail dropdown list.
-        if (!selectGeoTrail.isDropDownListScrolling() ) {
-            // Scrolling is prevented except for selectGeoTrail droplist.
+        if (!(selectGeoTrail.isDropDownListScrolling() || nMode === that.eMode.record_stats_view)) {  
+            // Scrolling is prevented except for selectGeoTrail droplist or Stats History View.
             event.preventDefault();
             event.stopPropagation();
         }
@@ -6981,7 +7005,8 @@ function wigo_ws_View() {
                             ['online_view',   'Online'],        
                             ['offline',       'Offline'],       
                             ['online_edit',   'Edit a Trail'],        
-                            ['online_define', 'Draw a Trail']       
+                            ['online_define', 'Draw a Trail'],
+                            ['record_stats_view', 'Stats History']      
                            ]; 
     selectMode.fill(selectModeValues);
 
@@ -7356,6 +7381,7 @@ Are you sure you want to delete the maps?";
     //NotNeeded selectRecordShareDropDown.onListElClicked = function(dataValue) {
     //NotNeeded };
     
+    // DropDownCpmtrol for selectiong point action when editing a trail
     parentEl = document.getElementById('editDefinePtAction');
     var selectPtActionDropDown = new ctrls.DropDownControl(parentEl, "selectPtActionDropDown", "Pt Action", "", "img/ws.wigo.dropdownicon.png")
     selectPtActionDropDown.onListElClicked = function(dataValue) {
@@ -7363,6 +7389,259 @@ Are you sure you want to delete the maps?";
         fsmEdit.DoEditTransition(nValue);
     };
 
+    // Composite control for displaying history of recorded stats. 
+    // Constructor args:
+    //  holderDiv: HTMLElement. container for the record stats list.
+    //  tile: string, optional. Title for the recorded stats list. Defaults to no title.
+    function RecordStatsHistory(holderDiv, title) {
+
+        // Set month/year in header to date.
+        // Arg:
+        // date: integer or Date object. For an integer, Date object value in milliseconds.
+        this.setMonthYear = function(date) {
+            if (typeof(date) === 'number') {
+                date = new Date(date); 
+            }
+            if (!(date instanceof Date))
+                throw new Error("StatsHistory.setDate() arg must be a valid Date.");
+            
+            // Get year and month for the date.
+            var year = date.getFullYear();
+            var month = date.toLocaleString('en-US', { month: "long" });
+            //Display year and month.
+            yearDiv.innerHTML = year.toFixed(0); 
+            monthDiv.innerHTML = month;
+        };
+
+        // Add a stats item to the list.
+        // Arg:
+        //  recStats: wigo_ws_GeoTrailRecordStats object. Contains stats info for item to add to list.
+        // bTop: boolean, optional. true to add at top of list, false appends to list. Defaults to true.
+        // Notes: 
+        // Class names for formatting stats item:
+        //  stats_history_title - div for title, iff title is given in constructor.
+        //  stats_item -- row for the stats item cells.
+        //  stats_date - cell for date and time.
+        //      stats_time       - start time, eg 01:15 pm
+        //      stats_month_day  - day of month, eg 19
+        //      stats_week_day   - day of week, eg Wed
+        //  stats_distance_time - distance in english or metric units and runtime in mins:secs.
+        //  stats_speed_calories - speed in english or metreic units and calories.
+        // Class names for formatting stats month, year row separator:
+        //  stats_separator:  - row for the stats separator, eg December 2017
+        this.addStatsItem = function(recStats, bTop) {
+            if (typeof(bTop) !== 'boolean') 
+                bTop = true;
+
+            // Helper to add row div to this list.
+            function AddRowDiv(rowDiv) {
+                if (bTop && stats.listDiv.children.length > 0) {
+                    stats.listDiv.insertBefore(rowDiv, stats.listDiv.children[0]);
+                } else {
+                    stats.listDiv.appendChild(rowDiv);
+                }
+            }
+            
+            var dt = new Date(recStats.nTimeStamp);
+            // Initialize current month, year object for empty list.
+            if (itemCount === 0) {
+                curMonthYear.init(dt); 
+                this.setMonthYear(dt); 
+            }
+
+            // Check for change in the month.
+            var bMonthChanged = curMonthYear.checkChange(dt.getMonth(), dt.getFullYear());
+            if (bMonthChanged) {
+                // append a div for month, year row separator.
+                var separator = this.create('div', null, 'stats_separator');
+                separator.innerHTML = "{0} {1}".format(prevdt.toLocaleString('en-US', {month: 'long'}),
+                                                       prevdt.toLocaleString('en-US', {year: 'numeric'}));
+                AddRowDiv(separator);
+            }
+
+            // Create item div.
+            var item = this.create('div', null, 'stats_item');
+            item.setAttribute('data-timestamp', recStats.nTimeStamp.toFixed(0));
+            var cellDate = this.create('div', null, 'stats_date');
+            item.appendChild(cellDate);
+
+            var cellDistanceRunTime = this.create('div', null, 'stats_distance_time');    
+            item.appendChild(cellDistanceRunTime);
+            var cellSpeedCalories = this.create('div', null, 'stats_speed_calories');  
+            item.appendChild(cellSpeedCalories);
+
+
+            // Display date example: // 01:30p, 10 Nov, Fri 
+            // Display date cell.
+            var sTime = dt.toLocaleTimeString('en-US', {hour: "2-digit", minute: "2-digit"});
+            var sMonthDay = dt.toLocaleString('en-US', {day: '2-digit'});
+            // var sMonth = dt.toLocaleString('en-US', {month: 'short'});
+            var sWeekDay = dt.toLocaleString('en-US', {weekday: 'short'});
+            cellDate.innerHTML = "<span class='stats_time'>{0}</span><span class='stats_month_day'>{1}</span><span class='stats_week_day'>{2}</span>".format(sTime, sMonthDay, sWeekDay);    
+            // Display display distance, runtime cell and speed, calories cell.
+            var sDistance = lc.to(recStats.mDistance);
+            var runTimeMins = recStats.msRunTime /(1000 * 60);
+            var sRunTimeMins = runTimeMins.toFixed(0);
+            var runTimeSecs = (runTimeMins - Math.floor(runTimeMins))*60; // Convert fractional minute to seconds.
+            var sRunTimeSecs = runTimeSecs.toFixed(0);
+            if (sRunTimeSecs.length < 2) // Always use 2 digits for seconds.
+                sRunTimeSecs = '0' + sRunTimeSecs;
+            var sSpeed = lc.toSpeed(recStats.mDistance, recStats.msRunTime/1000).text; // speed in metric or english units.            
+            var sCalories = recStats.caloriesBurnedCalc.toFixed(0);
+            cellDistanceRunTime.innerHTML = "{0}<br/>{1}:{2} m:s".format(sDistance, sRunTimeMins, sRunTimeSecs);
+            cellSpeedCalories.innerHTML = "{0}<br/>{1} cals".format(sSpeed, sCalories);
+
+            // Add the item to the list.
+            AddRowDiv(item);
+
+            itemCount++;
+            prevdt = dt; // Save ref to Date of previous recStats.
+        };
+        var prevdt = null; // Ref to Date of previous RecStats object.
+
+        // Returns number of stats items in the list.
+        // Note: length of list is greater than item count because of separator rows.
+        this.getItemCount = function() {
+            return itemCount;
+        };
+
+        // Updates this list from an array of wigo_ws_GeoTrailRecordStats objects.
+        // Arg: 
+        //  arRecStats: array of wigo_ws_GeoTrailRecordStats objects.
+        this.update = function(arRecStats) {
+            // Add stats items that are not aready in this list.
+            if (!arRecStats)
+                return; // Quit if arRecStats is not defined or is null.
+
+            
+            AddTestItems(arRecStats, 10);  // Only for debug. Add 10 test items to top of array.
+
+            var recStats;
+            for (var i=itemCount; i < arRecStats.length; i++) {
+                recStats = this.addStatsItem(arRecStats[i]);
+            }
+        };
+
+        // Shows month/date for first item visible in the list.
+        // Note: this control must be visible.
+        this.showMonthDate = function() {
+            // Set month date of first visible item in the list.
+            // Equivalent to processing done for scrolling completed.
+            OnScrollComplete(stats.listDiv.scrollTop, 0);
+        };
+
+        // Private members
+        var that = this;
+        // Handler for scroll completed event.
+        // Sets (displays) month/date for first item visible in the list.
+        function OnScrollComplete(pxScrollTop, nScrollEventCount) {
+            // Find first item in list that is visible.
+            let prevRowOffsetTop = 0;
+            for (var i=0; i < stats.listDiv.children.length; i++) {
+                var row = stats.listDiv.children[i];
+                var timestamp = row.getAttribute('data-timestamp');
+                // Note: timestamp is null for separator div.
+                if (timestamp && row.offsetTop + row.offsetHeight > stats.listDiv.scrollTop) { 
+                    // Found first visible item.
+                    // Set scroll top of list to top of first visbile item.
+                    // Display month, date in header for first visible item.
+                    that.setMonthYear(Number(timestamp)); 
+                    break;
+                } else {
+                    prevRowOffsetTop = row.offsetTop;
+                }
+            }
+        }
+
+        // Adds items to the list in order to test changing from month to month.
+        // Only for debug. Delete when no longer needed.
+        // Args:
+        //  arRecStats: array of wigo_ws_GeoTrailRecordStats objs. array for which test item are inserted at top of array.
+        //  nItemsToAdd: number of test items to add.
+        var bTestItemsAdded = false;
+        function AddTestItems(arRecStats, nItemsToAdd) {
+            if (bTestItemsAdded) {
+                return; // Only do once.
+            }
+            bTestItemsAdded = true;
+
+            // Add items each 12 days apart from first item in the list.
+            var msDays = 12 * 24 * 60 * 60 * 1000; // number of days to inscrement insert items in milliseconds.
+            var stats0 = arRecStats.length > 0 ? arRecStats[0] : new wigo_ws_GeoTrailRecordStats();
+            for (let i=0; i <nItemsToAdd; i++) {
+                let stats = new wigo_ws_GeoTrailRecordStats();
+                stats.nTimeStamp = stats0.nTimeStamp + msDays;
+                stats.msRunTime = stats0.msRunTime + 2000; 
+                stats.mDistance = stats0.mDistance + 100; 
+                stats.caloriesKinetic = stats0.caloriesKinetic + 11;      
+                stats.caloriesBurnedCalc = stats0.caloriesBurnedCalc + 12;   
+                stats.caloriesBurnedActual = stats0.caloriesBurnedActual + 20;
+
+                arRecStats.push(stats);
+                stats0 = stats;  
+            }
+        }
+
+        // Number of items in the list.
+        // Note length of list is greater than item count because of separator rows.
+        var itemCount = 0; 
+
+        // Object to detect change in current month and year.
+        var curMonthYear = {month: -1, year: -1,
+                            isValid: function(){
+                                return this.month >= 0 && this.month <= 11 && this.year >= 1970;
+                            },
+                            // Checks for a change. If true, sets this object for new  date.
+                            // Args: nMonth, nYear: number for month and year to check.
+                            // Returns: boolean. true if there is a change.
+                            // Note: This object is initially invalid. If invalid,
+                            //       sets this object to nMonth, nYear and returns false,
+                            //       i.e. initially first check in not a change.
+                            checkChange: function(nMonth, nYear) {
+                                var bChange = false;
+                                if (this.isValid()) {
+                                    bChange = !(this.month === nMonth && this.year === nYear);
+                                    if (bChange) {
+                                        this.month = nMonth;
+                                        this.year = nYear;
+                                    }
+                                } else {
+                                    this.month = nMonth;
+                                    this.year = nYear;
+                                } 
+                                return bChange; 
+                            },
+                            // Initialize this object.
+                            // Arg: timestamp: Date object or integer for Date value.
+                            init: function(timeStamp) {
+                                if (typeof(timeStamp) === 'number') {
+                                    timeStamp = new Date(timeStamp);
+                                }
+                                this.month = timeStamp.getMonth();
+                                this.year = timeStamp.getFullYear();
+                            }
+                            };
+
+        
+        // Constructor initialization.
+        if (title) {
+            this.create('div', null, 'stats_history_title')
+        }
+        
+        // Create empty, scrollable list.
+        var stats = this.createList(holderDiv, 5); // stats is {headerDiv: div, listDiv: div} obj.
+        // Ref to divs for month and year in header.
+        var monthDiv = stats.headerDiv.getElementsByClassName('wigo_ws_cell1')[0];
+        var yearDiv = stats.headerDiv.getElementsByClassName('wigo_ws_cell2')[0];
+
+        // New ScrollComplete object. See ScrollableListBase in ws.wigo.cordovacontrols.js.
+        var scrollComplete = this.newOnScrollComplete(stats.listDiv); 
+        scrollComplete.onScrollComplete = OnScrollComplete; // Attach callback for scroll complete event.
+    }
+    RecordStatsHistory.prototype = new ctrls.ScrollableListBase();
+    RecordStatsHistory.constructor = RecordStatsHistory;
+
+    // Object for sending message to Pebble watch.
     var sDegree = String.fromCharCode(0xb0); // Degree symbol.
     var alerter = new Alerter(); // Object for issusing alert to phone.
     var pebbleMsg = new PebbleMessage(); // Object for sending/receiving to/from Pebble watch.
@@ -7778,6 +8057,13 @@ function wigo_ws_Controller() {
     view.onGetLastRecordStats = function() {
         return model.getLastRecordStats();
     };  
+
+    // Gets list of recorded stats.
+    // Arg: none.
+    // Returns: Array of wigo_ws_GeoTrailRecordStat objects.
+    view.onGetRecordStatsList = function() { 
+        return model.getRecordStatsList(); 
+    };
 
     // Sets recorded starts.
     //  Args: 
