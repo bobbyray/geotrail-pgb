@@ -42,7 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Work on RecordingTrail2 branch. Filter spurious record points.
-    var sVersion = "1.1.033-20170202"; // Constant string for App version. 
+    var sVersion = "1.1.033-20180211"; // Constant string for App version. RecStatsArchive
 
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
@@ -518,7 +518,7 @@ function wigo_ws_View() {
                     sStatusPebble += 'Accel Disabled\n';
                 }
             } 
-            // Note: For iPhone, not status at all because not used.
+            // Note: For iPhone, no status at all because not used.
         }
 
         // Form status message.
@@ -2803,8 +2803,11 @@ function wigo_ws_View() {
         var recordCtrl = null;
         var bOnline = true; 
 
-        // Saves stats for recorded trail locally.
-        // Note: Raises a event.stop, which transitions to StateStopped if reonding is on.
+        // Saves stats for recorded trail locally and returns to initial state 
+        // with record recorded path cleared. (Recorded path can be uncleared.)
+        // Note: Raises event.stop, which transitions to StateStopped if recornding is on.
+        //       Raise event.clear, which clears recorded trail (allowing it to be uncleared)
+        //       and transitions to StateInitial from StateStopped.
         this.saveStats = function() { 
             if (this.isOff())                                          
                 return; // Quit if recording off, no path for stats.   
@@ -2812,6 +2815,14 @@ function wigo_ws_View() {
             // Ensure stopped.
             this.nextState(this.event.stop);  
 
+            SaveStats(); // Save stats locally and update metrics.
+
+            this.nextState(this.event.clear); // Clear recorded trail.
+        };
+
+
+        // Saves stats and updates stats metrics.
+        function SaveStats() { 
             // Filter the record path.
             map.recordPath.filter();
             // Get stats and save locally.
@@ -2820,7 +2831,7 @@ function wigo_ws_View() {
                 var statsData = view.onSetRecordStats(stats); // Save stats data. 
                 recordStatsMetrics.update(statsData); // Update metrics for stats. 
             }
-        };
+        }
 
         // Transitions this FSM to its next state given an event.
         // Arg:
@@ -3048,14 +3059,12 @@ function wigo_ws_View() {
         // Record is off. Ready to start.
         function StateInitial() {
             // Reset for StateInitial.
-            // Note: Call if unclear is not available before calling this.prepare().
+            // Note: Does NOT reset geo points in recordPath. Need to call map.recordPath.reset() to reset geo points.
             this.reset = function() {
                 // Set default for recordShare droplist.
                 selectRecordShareDropDown.setSelected('private');
                 // Reset the uploader for the recorded trail.
                 uploader.clear();
-                // Reset the captured points for trail.
-                map.recordPath.reset();
                 // Initialize parameters for saving a Record trail offline.
                 localSaver.initParams();
             };
@@ -3078,6 +3087,7 @@ function wigo_ws_View() {
                 switch (event) {
                     case that.event.start: 
                         this.reset(); 
+                        map.recordPath.reset(); // Clear geo points for recordPath. 
                         stateOn.prepare();
                         map.recordPath.enableZoomToFirstCoordOnce(); 
                         curState = stateOn;
@@ -3112,6 +3122,7 @@ function wigo_ws_View() {
                     case that.event.stop:
                         var msTimeStamp = Date.now();
                         map.recordPath.appendPt(null, msTimeStamp, map.recordPath.eRecordPt.PAUSE); 
+                        SaveStats(); // Save stats locally when stopping. 
                         stateStopped.prepare();
                         curState = stateStopped;
                         view.ShowCurrentStatus(); // Show status for Record, Track, and Accel. 
@@ -3303,8 +3314,6 @@ function wigo_ws_View() {
                         s = "{0} points ignored because of excessive velocity.<br/>".format(stats.nExcessiveV);
                         sMsg += s;
                     }
-                    var statsData = view.onSetRecordStats(stats); // Save stats data. 
-                    recordStatsMetrics.update(statsData); // Update metrics for stats. 
                     var sStatsMetricsMsg = recordStatsMetrics.formStatusMsg();
                     view.ShowStatus(sStatsMetricsMsg, true); // Show stats metrics status as error for highlighting. Maybe change later.
                     view.AppendStatus(sMsg, false);
@@ -3371,6 +3380,7 @@ function wigo_ws_View() {
                         // Note: If somethng is wrong for saving, stay in same state.
                         break;
                     case that.event.cancel:
+                    case that.event.stop: 
                         stateStopped.prepare();
                         view.ClearStatus();    
                         ClearPathNameUI();  // Clear UI for defining path name.
@@ -5224,12 +5234,13 @@ function wigo_ws_View() {
 
         // Set parameters for excessive acceleration.
         deviceMotion.bAvailable = settings.bAccelAlert; 
-        if (settings.bAccelAlert && window.app.deviceDetails.isAndroid())  // Accel Alert is not available for iPhone. 
-            deviceMotion.allow();
-        else
-            deviceMotion.disallow();
+        var bAllowAfterReset = settings.bAccelAlert && window.app.deviceDetails.isAndroid();
+        deviceMotion.reset(bAllowAfterReset);
         deviceMotion.setAccelThres(settings.nAccelThres);
         deviceMotion.setAccelVThres(settings.nAccelVThres); 
+        if (recordFSM.isRecording())           
+            deviceMotion.enableForRecording(); 
+        // Note: RunTrackTimer() below will enable device motion for tracking if tracking is on.
 
         // Set body mass. (Used to calculate calories for a recorded path and stats item editor.
         map.recordPath.setBodyMass(settings.kgBodyMass);  
@@ -6535,7 +6546,7 @@ function wigo_ws_View() {
     // Note: The webview support for the DeviceMotionEvent is supposed to work.
     //       It does work for mobile Chrome, but I could not get it to work for GeoTrail
     //       The DeviceEvent did work at one time for GeoTrail, but I cannot get it 
-    //       to work now. I tried hard, but no luck. Cannnot image what changed.
+    //       to work now. I tried hard, but no luck. Cannnot imagine what changed.
     // Object for detection device motion.
     // Constructor arg:
     //  view: ref to wigo_ws_View.
@@ -6608,6 +6619,17 @@ function wigo_ws_View() {
             }
             bRecording = false;
         };
+
+        // Resets device motion.
+        // Arg:
+        //  bAllow: boolean. true to allow device motion sensing after resetting.
+        this.reset = function(bAllow) { 
+            this.disallow();
+            this.disableForTracking();
+            this.disableForRecording();
+            if (bAllow) 
+                this.allow();
+        }
 
         // Returns true if acceleration is being sensed.
         this.isSensing = function() { // Added function.
@@ -7153,10 +7175,9 @@ function wigo_ws_View() {
                 }
             });
         } else if (!recordFSM.isOff()) { 
-            ConfirmYesNo("Recording a trail is in progress. OK to continue and delete the recording?", function(bConfirm){
+            ConfirmYesNo("Recording a trail is in progress. OK to continue and clear the recording?", function(bConfirm){
                 if (bConfirm) {
                     recordFSM.saveStats(); // Ensure stats for recording have been saved. 
-                    recordFSM.initialize(); // Reset recording.
                     AcceptModeChange();
                 } else {
                     // Restore the current mode selected before the change.
@@ -7655,7 +7676,7 @@ Are you sure you want to delete the maps?";
             var sCalories = recStats.caloriesBurnedCalc.toFixed(0);
             cellDistanceRunTime.innerHTML = "{0}<br/>{1}".format(sDistance, runTime.getStr()); 
             cellSpeedCalories.innerHTML = "{0}<br/>{1} cals".format(sSpeed, sCalories);
-
+            
             // Add the item to the list.
             AddRowDiv(item);
 
@@ -7698,9 +7719,29 @@ Are you sure you want to delete the maps?";
 
             //AddTestItems(arRecStats, 10);  // Only for debug. Add 10 test items before oldest item, which is element 0.
             var recStats;
-            for (var i=itemCount; i < arRecStats.length; i++) {
-                recStats = arRecStats[i];
-                this.addStatsItem(recStats);
+            
+            if (itemCount === arRecStats.length && arRecStats.length > 0) { 
+                // Check if top item is same as last (top, most recent) stats data rec.
+                if (stats.listDiv.children.length > 0) {
+                    recStats = arRecStats[stats.listDiv.children.length-1];
+                    var topItem = stats.listDiv.children[0];
+                    var sTopTimeStamp = topItem.getAttribute('data-timestamp');
+                    var nTopTimeStamp = Number(sTopTimeStamp); 
+                    if (nTopTimeStamp === recStats.nTimeStamp) {
+                        // Top list item is same as most recent stats data rec.
+                        // Delete top item in the list, and replace it in case
+                        // the stats data rec has been updated. The data stats rec 
+                        // can be updated due to unclearing a recorded path.
+                        DeleteItem(topItem.id);
+                        this.addStatsItem(recStats);
+                    }
+                }
+
+            } else { 
+                for (var i=itemCount; i < arRecStats.length; i++) {
+                    recStats = arRecStats[i];
+                    this.addStatsItem(recStats);
+                }
             }
         };
 
@@ -7861,6 +7902,7 @@ Are you sure you want to delete the maps?";
             let statsDiv = document.getElementById(id);
             if (statsDiv && statsDiv.parentElement) {
                 statsDiv.parentElement.removeChild(statsDiv);
+                itemCount--;  
             }
         }
 
