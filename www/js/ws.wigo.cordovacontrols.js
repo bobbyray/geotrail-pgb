@@ -958,7 +958,7 @@ function Wigo_Ws_CordovaControls() {
 
         // Returns true if the status div is empty.
         this.isEmpty = function() {
-            var bEmpty = statusDiv.children.length === 0;
+            var bEmpty = statusDiv.children.length <= 1; // children[0] is the close (x) div. 
             return bEmpty;
         };
 
