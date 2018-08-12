@@ -5,7 +5,7 @@ Licensed under terms of the MIT License, which is given at
 https://github.com/bobbyray/MitLicense/releases/tag/v1.0
 -->
 <widget id="ws.wigo.geotrail" 
-    version="1.1.033" xmlns="http://www.w3.org/ns/widgets" 
+    version="1.1.034" xmlns="http://www.w3.org/ns/widgets" 
     xmlns:cdv="http://cordova.apache.org/ns/1.0"   
     xmlns:gap="http://phonegap.com/ns/1.0" > 
     <name>GeoTrail</name>
