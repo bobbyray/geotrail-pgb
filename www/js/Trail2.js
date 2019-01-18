@@ -1,6 +1,6 @@
 ﻿'use strict';
 /* 
-Copyright (c) 2015 - 2017 Robert R Schomburg
+Copyright (c) 2015 - 2019 Robert R Schomburg
 Licensed under terms of the MIT License, which is given at
 https://github.com/bobbyray/MitLicense/releases/tag/v1.0
 */
@@ -42,8 +42,7 @@ wigo_ws_GeoPathMap.OfflineParams = function () {
 // Object for View present by page.
 function wigo_ws_View() {
     // Work on RecordingTrail2 branch. Filter spurious record points.
-    var sVersion = "1.1.034-20180812-1317"; // Constant string for App version. // not yet RecStatsArchive
-
+    var sVersion = "1.1.036-20190117-1419"; // Constant string for App version. // For default Facebook permissions.
     // ** Events fired by the view for controller to handle.
     // Note: Controller needs to set the onHandler function.
 
@@ -4209,7 +4208,7 @@ function wigo_ws_View() {
 
     // Returns About message for this app.
     function AboutMsg() {
-        var sCopyright = "2015 - 2018";
+        var sCopyright = "2015 - 2019";
         var sMsg =
         "Version {0}\nCopyright (c) {1} Robert R Schomburg\n".format(sVersion, sCopyright);
         return sMsg;
@@ -8332,6 +8331,10 @@ Are you sure you want to delete the maps?";
             // Empty the itemsSelected obj since no items are selected.
             itemsSelected = {}; // Empty the list 
         }
+        ////20180828 // Threshold in meters for distance to nearest point on path.
+        ////20180828 // If distance from geolocation to nearest point on the path
+        ////20180828 // is > dCloseToPathThres, then geo location is off-path.
+        ////20180828 this.dCloseToPathThres = -1;
 
         // Get a list of stats items to be deleted from server.
         // Returns: array of wigo_ws_GeoTrailTimeStamp objs. 
