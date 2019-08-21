@@ -117,7 +117,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <!-- 20170411 try default version to see if cordova-plugin-network-information will work -->
         <!-- 20170411 <preference name="phonegap-version" value="cli-6.0.0" /> --> <!-- 20170411 try cli-6.0.0 ios 4.0.1 for network-information -->
         <!-- 20170728 <preference name="phonegap-version" value="cli-5.4.1" /> --> <!-- Need to update to cli-6.0.0 or above, also Facebook plugin problem -->
-        <preference name="phonegap-version" value="cli-6.5.0" />
+        <preference name="phonegap-version" value="cli-7.0.1" /> <!-- 20190821was cli-6.5.0 -->
         <!-- 20190819 App Secret id for MS App Center -->
         <!-- <preference name="APP_SECRET" value="0000-0000-0000-0000-000000000000" /> -->
         <preference name="APP_SECRET" value="329b-4948-fe73-62e2-fce8a9bc4f50ac8e"/>
