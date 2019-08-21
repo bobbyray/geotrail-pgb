@@ -119,7 +119,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <preference name="phonegap-version" value="cli-6.5.0" />
         <!-- 20190819 App Secret id for MS App Center -->
         <!-- <preference name="APP_SECRET" value="0000-0000-0000-0000-000000000000" /> -->
-        <preference name="APP_SECRET" value="329b-4948-fe73-62e2-fce8a9bc4f50ac8e"
+        <preference name="APP_SECRET" value="329b-4948-fe73-62e2-fce8a9bc4f50ac8e"/>
     </platform>
     
     <!-- Move ios UIBackgroundModes under platform for ios -->
