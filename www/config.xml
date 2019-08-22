@@ -51,7 +51,7 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         <icon height="87" src="res/icons/icon-87.png" width="87" />
         <icon height="167" src="res/icons/icon-167.png" width="167" />   
         
-        <engine name="ios" spec="~4.4.0" />  <!-- 20190822 added -->
+         <!-- <engine name="ios" spec="~4.4.0" />  20190822 did not help -->
 
         <allow-intent href="itms:*" />
         <allow-intent href="itms-apps:*" />
@@ -106,10 +106,11 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         -->
 
         <!-- //20190819 MS App Center Plugins replacing Hockey App -->
-        <!-- //20190821 MS App Center Plugins will not build. Comment them out. -->
+        <!-- //20190821 MS App Center Plugins will not build. Comment them out. 
         <plugin name="cordova-plugin-appcenter-shared" source="npm" spec="0.4.0"/>
         <plugin name="cordova-plugin-appcenter-crashes" source="npm" spec="0.3.6"/>
         <plugin name="cordova-plugin-appcenter-analytics" source="npm" spec="0.3.6" />
+        -->
         
         <preference name="StatusBarOverlaysWebView" value="false" /> 
         <preference name="StatusBarBackgroundColor" value="#A7A7A7"/>
