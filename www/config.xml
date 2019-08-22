@@ -106,11 +106,11 @@ https://github.com/bobbyray/MitLicense/releases/tag/v1.0
         -->
 
         <!-- //20190819 MS App Center Plugins replacing Hockey App -->
-        <!-- //20190821 MS App Center Plugins will not build. Comment them out.
+        <!-- //20190821 MS App Center Plugins will not build. Comment them out. -->
         <plugin name="cordova-plugin-appcenter-shared" source="npm" spec="0.4.0"/>
         <plugin name="cordova-plugin-appcenter-crashes" source="npm" spec="0.3.6"/>
         <plugin name="cordova-plugin-appcenter-analytics" source="npm" spec="0.3.6" />
-        -->
+        
         <preference name="StatusBarOverlaysWebView" value="false" /> 
         <preference name="StatusBarBackgroundColor" value="#A7A7A7"/>
         <preference name="StatusBarStyle" value="blacktranslucent" />        
